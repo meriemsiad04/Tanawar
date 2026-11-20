@@ -1,0 +1,1 @@
+//create the  browser router   the public students and the admin pannel
