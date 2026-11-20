@@ -1,17 +1,18 @@
+import logoMark from "../../assets/logo/Logo2.svg";
+
 /**
- * TANAWAR logo lockup — PLACEHOLDER.
- * The real logo will be provided later: replace the body of this component
- * (e.g. import it from src/assets and render an <img>) and every usage
- * (Navbar, Footer) updates at once.
+ * TANAWAR logo lockup: logo.svg mark + wordmark.
  * variant "onDark" → for ink backgrounds, "default" → for light backgrounds.
+ * Every usage (Navbar, Footer) updates from here.
  */
 export default function Logo({ variant = "default", className = "" }) {
-  const color = variant === "onDark" ? "text-white" : "text-ink";
+  const color = variant === "onDark" ? "text-white" : "text-ink dark:text-white";
   return (
     <span
-      className={`inline-flex items-center text-xl font-extrabold tracking-wide ${color} ${className}`}
+      className={`inline-flex items-center gap-2.5 text-xl font-extrabold tracking-wide ${color} ${className}`}
     >
-      TANAWAR
+      <img src={logoMark} alt="" className="h-9 w-auto" />
+      
     </span>
   );
 }

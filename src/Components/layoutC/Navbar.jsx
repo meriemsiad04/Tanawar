@@ -1,6 +1,7 @@
 import Button from "../uiC/Button.jsx";
 import Logo from "../uiC/Logo.jsx";
 import LangSwitch from "./LangSwitch.jsx";
+import ThemeToggle from "./ThemeToggle.jsx";
 
 const LINKS = [
   { label: "How it works", href: "#how" },
@@ -9,7 +10,7 @@ const LINKS = [
 ];
 
 /** Landing top navigation (dark band). */
-export default function Navbar({ onSignIn, onCreateAccount }) {
+export default function Navbar({ onSignIn }) {
   return (
     <header className="sticky top-0 z-50 flex h-[76px] w-full items-center justify-between gap-4 border-b border-white/10 bg-ink px-6 lg:px-16">
       <a href="#top" aria-label="TANAWAR home" className="shrink-0">
@@ -21,7 +22,7 @@ export default function Navbar({ onSignIn, onCreateAccount }) {
           <a
             key={href}
             href={href}
-            className="transition-colors hover:text-white focus-visible:text-white focus-visible:outline-none"
+            className="relative py-1 transition-colors duration-200 hover:text-white focus-visible:text-white after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:origin-left after:scale-x-0 after:rounded-full after:bg-highlight after:transition-transform after:duration-200 after:ease-out hover:after:scale-x-100 focus-visible:outline-none focus-visible:after:scale-x-100"
           >
             {label}
           </a>
@@ -29,15 +30,10 @@ export default function Navbar({ onSignIn, onCreateAccount }) {
       </nav>
 
       <div className="flex items-center gap-3">
+        <ThemeToggle />
         <LangSwitch />
-        {/* Hide on a wrapper: Button sets its own display, so `hidden` on it would lose. */}
-        <div className="hidden sm:block">
-          <Button variant="ghostDark" size="s" onClick={onSignIn}>
-            Sign in
-          </Button>
-        </div>
-        <Button variant="amber" size="s" onClick={onCreateAccount}>
-          Create account
+        <Button variant="amber" size="s" onClick={onSignIn} aria-haspopup="dialog">
+          Sign in
         </Button>
       </div>
     </header>

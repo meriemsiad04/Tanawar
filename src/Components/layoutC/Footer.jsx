@@ -1,4 +1,4 @@
-import Logo from "../uiC/Logo.jsx";
+import logoV from "../../assets/logo/logoV.svg";
 
 const COLUMNS = [
   {
@@ -13,7 +13,7 @@ const COLUMNS = [
     title: "Account",
     links: [
       { label: "Create account", href: "#" },
-      { label: "Sign in", href: "#" },
+      { label: "Sign in", action: "signIn" },
       { label: "Forgot password", href: "#" },
     ],
   },
@@ -27,12 +27,14 @@ const COLUMNS = [
   },
 ];
 
-export default function Footer() {
+export default function Footer({ onSignIn }) {
+  const actions = { signIn: onSignIn };
+
   return (
     <footer className="flex flex-col pt-[88px]">
       <div className="flex flex-col justify-between gap-10 border-t border-line px-6 py-10 md:flex-row lg:px-16">
         <div className="flex flex-col items-start gap-3">
-          <Logo />
+          <img src={logoV} alt="TANAWAR" className="h-9 w-auto" />
           <p className="max-w-[300px] text-[13px] leading-[19px] text-fg-2">
             Peer-to-peer learning platform for the students of the University of
             Boumerdès.
@@ -43,15 +45,27 @@ export default function Footer() {
           {COLUMNS.map(({ title, links }) => (
             <div key={title} className="flex flex-col items-start gap-2.5">
               <p className="text-sm font-bold leading-5 text-fg">{title}</p>
-              {links.map(({ label, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  className="text-[13px] leading-[19px] text-fg-2 transition-colors hover:text-primary-text"
-                >
-                  {label}
-                </a>
-              ))}
+              {links.map(({ label, href, action }) =>
+                action ? (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={actions[action]}
+                    aria-haspopup="dialog"
+                    className="cursor-pointer text-[13px] leading-[19px] text-fg-2 transition-colors hover:text-primary-text"
+                  >
+                    {label}
+                  </button>
+                ) : (
+                  <a
+                    key={label}
+                    href={href}
+                    className="text-[13px] leading-[19px] text-fg-2 transition-colors hover:text-primary-text"
+                  >
+                    {label}
+                  </a>
+                )
+              )}
             </div>
           ))}
         </div>
@@ -59,7 +73,7 @@ export default function Footer() {
 
       <div className="flex flex-col justify-between gap-2 px-6 pb-8 text-fg-3 sm:flex-row lg:px-16">
         <p className="text-[13px] leading-[19px]">© 2026 TANAWAR · UMBB</p>
-        <p className="text-xs font-bold leading-4">Prototype · demo data · FR / EN</p>
+        <p className="text-xs font-bold leading-4">developed by: TANAWAR Team</p>
       </div>
     </footer>
   );
