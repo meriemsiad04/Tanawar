@@ -17,7 +17,24 @@ export const MATRICULE_PATTERN = /^\d{8,14}$/;
 /** Where each role lands after signing in. */
 export const HOME_BY_ROLE = { admin: "/admin", student: "/app" };
 
+/**
+ * Frontend-only demo account, available in `npm run dev` only (stripped from production builds).
+ * Remove together with the DEV branch in signIn() once the backend exists.
+ */
+export const DEMO_ACCOUNT = import.meta.env.DEV
+  ? {
+      matricule: "202131012345",
+      password: "demo1234",
+      user: { matricule: "202131012345", fullName: "Meriem Benali", role: "student", field: "Informatique", level: "L3" },
+    }
+  : null;
+
 export async function signIn({ matricule, password, remember }) {
+  if (DEMO_ACCOUNT && matricule === DEMO_ACCOUNT.matricule && password === DEMO_ACCOUNT.password) {
+    saveSession({ token: "demo-token", user: DEMO_ACCOUNT.user }, remember);
+    return DEMO_ACCOUNT.user;
+  }
+
   let data;
   try {
     data = await apiRequest("/auth/login", {

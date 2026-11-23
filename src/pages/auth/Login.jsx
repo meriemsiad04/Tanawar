@@ -3,7 +3,7 @@ import AuthLayout from "../../layouts/AuthLayout.jsx";
 import Button from "../../Components/uiC/Button.jsx";
 import Icon from "../../Components/uiC/Icon.jsx";
 import Input from "../../Components/uiC/Input.jsx";
-import { MATRICULE_PATTERN, signIn } from "../../services/authService.js";
+import { DEMO_ACCOUNT, MATRICULE_PATTERN, signIn } from "../../services/authService.js";
 
 function validate({ matricule, password }) {
   const errors = {};
@@ -179,6 +179,12 @@ export default function Login({ open, onClose, onSuccess, onCreateAccount, onFor
             "Sign in"
           )}
         </Button>
+
+        {DEMO_ACCOUNT && (
+          <p className="rounded-[10px] bg-accent-soft px-3 py-2 text-center text-[13px] leading-[18px] text-accent-ink">
+            Demo (dev only): <b>{DEMO_ACCOUNT.matricule}</b> / <b>{DEMO_ACCOUNT.password}</b>
+          </p>
+        )}
 
         <p className="pt-1 text-center text-[13px] leading-[18px] text-fg-2">
           New to TANAWAR? {" "}

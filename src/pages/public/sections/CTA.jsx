@@ -1,7 +1,9 @@
 import Button from "../../../Components/uiC/Button.jsx";
+import { useSignIn } from "../../../hooks/useSignIn.js";
 import ctaGlow from "../../../assets/landing/cta-glow.svg";
 
 export default function CTA() {
+  const openSignIn = useSignIn();
   return (
     <section className="px-6 pt-24 lg:px-16">
       <div className="relative flex flex-col items-center gap-[18px] overflow-hidden rounded-[32px] bg-ink px-6 py-[72px] text-center">
@@ -24,8 +26,8 @@ export default function CTA() {
           Free for every UMBB student. Check your matricule in under a minute.
         </p>
         <div className="relative pt-3.5">
-          <Button variant="amber" size="m">
-            Create your free account →
+          <Button variant="amber" size="m" onClick={openSignIn}>
+            Join our community →
           </Button>
         </div>
       </div>

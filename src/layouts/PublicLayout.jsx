@@ -3,6 +3,7 @@ import Navbar from "../Components/layoutC/Navbar.jsx";
 import Footer from "../Components/layoutC/Footer.jsx";
 import Login from "../pages/auth/Login.jsx";
 import { HOME_BY_ROLE } from "../services/authService.js";
+import { SignInContext } from "../hooks/useSignIn.js";
 
 /**
  * Public layout: landing navbar + footer around the page, plus the sign-in pop-up.
@@ -21,7 +22,9 @@ export default function PublicLayout({ children }) {
   return (
     <div id="top" className="flex min-h-screen flex-col bg-bg">
       <Navbar onSignIn={openSignIn} />
-      <main className="flex-1">{children}</main>
+      <SignInContext.Provider value={openSignIn}>
+        <main className="flex-1">{children}</main>
+      </SignInContext.Provider>
       <Footer onSignIn={openSignIn} />
 
       <Login

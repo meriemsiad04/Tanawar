@@ -20,7 +20,7 @@ export default function SessionCard({
   onCta,
 }) {
   return (
-    <article className="flex w-full flex-col gap-4 rounded-[20px] bg-surface p-[22px]">
+    <article className="flex w-full flex-col gap-4 rounded-[20px] bg-surface p-[22px] transition duration-200 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       <div className="flex items-center justify-between gap-2">
         <SessionStatusBadge tone={statusTone}>{status}</SessionStatusBadge>
         <SessionStatusBadge tone="clay">{module}</SessionStatusBadge>

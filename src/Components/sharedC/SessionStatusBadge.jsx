@@ -1,9 +1,12 @@
 const TONES = {
   live: "bg-danger-soft text-live gap-1.5",
   clay: "bg-accent-soft text-accent-ink",
+  joined: "bg-primary-soft text-primary-text",
+  warn: "bg-warn-soft text-warn",
+  neutral: "bg-surface-2 text-fg-2",
 };
 
-/** Pill badge. tone "live" shows the red dot; "clay" is the soft-violet label. */
+/** Pill badge. tone "live" shows the red dot; others: clay, joined, warn, neutral. */
 export default function SessionStatusBadge({ tone = "live", children }) {
   return (
     <span

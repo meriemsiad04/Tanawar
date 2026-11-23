@@ -2,6 +2,7 @@ import Button from "../../../Components/uiC/Button.jsx";
 import Avatar from "../../../Components/uiC/Avatar.jsx";
 import Icon from "../../../Components/uiC/Icon.jsx";
 import Reveal from "../../../Components/motion/Reveal.jsx";
+import { useSignIn } from "../../../hooks/useSignIn.js";
 import HeroSessionPreview from "./HeroSessionPreview.jsx";
 import amberGlow from "../../../assets/landing/amber-glow.svg";
 
@@ -16,6 +17,7 @@ const scrollToHow = () =>
   document.getElementById("how")?.scrollIntoView({ behavior: "smooth" });
 
 export default function Hero() {
+  const openSignIn = useSignIn();
   return (
     <section className="relative overflow-hidden bg-ink">
       {/* Amber glow */}
@@ -59,7 +61,7 @@ export default function Hero() {
           </Reveal>
 
           <Reveal delay={450} className="flex flex-wrap gap-3">
-            <Button variant="amber" size="m">
+            <Button variant="amber" size="m" onClick={openSignIn}>
               Start learning →
             </Button>
             <Button variant="ghostDark" size="m" onClick={scrollToHow}>
