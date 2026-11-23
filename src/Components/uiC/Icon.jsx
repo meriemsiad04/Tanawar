@@ -31,6 +31,19 @@ import {
   Users,
   Video,
   X,
+  Zap,
+  Wifi,
+  Upload,
+  Link,
+  FileText,
+  Image,
+  Globe,
+  ExternalLink,
+  ChartNoAxesColumn,
+  AlignLeft,
+  CalendarPlus,
+  Trash2,
+  ChevronDown,
 } from "lucide-react";
 
 /**
@@ -72,6 +85,19 @@ const ICONS = {
   userCheck: UserCheck,
   users: Users,
   video: Video,
+  bolt: Zap,
+  wifi: Wifi,
+  upload: Upload,
+  link: Link,
+  file: FileText,
+  image: Image,
+  globe: Globe,
+  external: ExternalLink,
+  levels: ChartNoAxesColumn,
+  text: AlignLeft,
+  calendarPlus: CalendarPlus,
+  trash: Trash2,
+  chevronDown: ChevronDown,
 };
 
 // The only sizes allowed in the UI.
