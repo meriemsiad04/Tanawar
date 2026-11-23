@@ -1,0 +1,1 @@
+// S stands for session and P stands for page in the pages naming inside the student pannel
