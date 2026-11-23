@@ -44,6 +44,8 @@ import {
   CalendarPlus,
   Trash2,
   ChevronDown,
+  Pencil,
+  Camera,
 } from "lucide-react";
 
 /**
@@ -98,6 +100,8 @@ const ICONS = {
   calendarPlus: CalendarPlus,
   trash: Trash2,
   chevronDown: ChevronDown,
+  pencil: Pencil,
+  camera: Camera,
 };
 
 // The only sizes allowed in the UI.

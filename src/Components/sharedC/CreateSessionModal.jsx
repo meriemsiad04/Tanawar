@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import Button from "../uiC/Button.jsx";
 import Icon from "../uiC/Icon.jsx";
 import Input from "../uiC/Input.jsx";
+import Select, { Counter, FieldError, Req } from "../uiC/Select.jsx";
+import { fieldShell } from "../uiC/fieldShell.js";
 import SessionPreviewCard from "./SessionPreviewCard.jsx";
 import { useDialog } from "../../hooks/useDialog.js";
 import {
@@ -72,64 +74,6 @@ function validate(v) {
   if (!v.description.trim()) e.description = "Add a short description.";
   return e;
 }
-// Displays the required-field asterisk.
-
-const Req = () => <span aria-hidden="true"> *</span>;
-// Displays an error message below an input field.
-function FieldError({ id, children }) {
-  if (!children) return null;
-  return (
-    <p id={id} className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold leading-4 text-live">
-      <Icon name="alert" size="sm" className="!size-3.5" />
-      {children}
-    </p>
-  );
-}
-// Generates consistent input styling depending on whether an error exists.
-const fieldShell = (error) =>
-  [
-    "group flex items-center gap-2.5 rounded-[10px] border bg-surface px-3 transition-[border-color,box-shadow] duration-150 focus-within:ring-4",
-    error
-      ? "border-live focus-within:border-live focus-within:ring-live/15"
-      : "border-line-strong hover:border-fg-3 focus-within:border-primary focus-within:ring-primary/15",
-  ].join(" ");
-
-
-// Reusable dropdown component with label, icon, options and error handling.
-
-function Select({ label, icon, value, onChange, onBlur, options, placeholder, error, required, disabled }) {
-  const id = useId();
-  return (
-    <div className="flex flex-col">
-      <label htmlFor={id} className="mb-1.5 text-[13px] font-bold leading-[18px] text-fg">
-        {label}
-        {required && <Req />}
-      </label>
-      <div className={`${fieldShell(error)} relative h-11`}>
-        <Icon name={icon} size="sm" className="text-fg-3 group-focus-within:text-primary-text" />
-        <select
-          id={id}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
-          disabled={disabled}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? `${id}-error` : undefined}
-          className={`h-full min-w-0 flex-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 appearance-none bg-transparent pr-6 text-sm outline-none ${value ? "text-fg" : "text-fg-3"}`}
-        >
-          <option value="">{placeholder}</option>
-          {options.map((o) => (
-            <option key={o} value={o} className="text-fg">
-              {o}
-            </option>
-          ))}
-        </select>
-        <Icon name="chevronDown" size="sm" className="pointer-events-none absolute right-3 text-fg-3" />
-      </div>
-      <FieldError id={`${id}-error`}>{error}</FieldError>
-    </div>
-  );
-}
 // Reusable selection button for choosing between session options.
 
 function Choice({ selected, onClick, icon, title, hint, className = "" }) {
@@ -156,8 +100,6 @@ function Choice({ selected, onClick, icon, title, hint, className = "" }) {
     </button>
   );
 }
-// Displays the current character count against the maximum allowed length.
-const Counter = ({ value, max }) => <span className="text-xs text-fg-3">{value.length}/{max}</span>;
 ////////////////////////////////////////////////////////////////////////////////
 /**/////////main function */
 /**

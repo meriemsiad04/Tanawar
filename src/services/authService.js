@@ -5,7 +5,7 @@ import { ApiError, apiRequest } from "./apiClient.js";
  *
  * Expected backend contract (adjust here when the API is built):
  *   POST /auth/login   { matricule, password }
- *   200 → { token: string, user: { matricule, fullName, role: "student" | "admin" } }
+ *   200 → { token: string, user: { matricule, fullName, role: "student" | "admin", profileCompleted: boolean, field?, level?, avatarUrl? } }
  *   401 → invalid credentials · 403 → account not verified / suspended
  */
 
@@ -84,5 +84,20 @@ export function clearSession() {
     sessionStorage.removeItem(SESSION_KEY);
   } catch {
     /* ignore */
+  }
+}
+
+/** Merge fields into the stored session user (e.g. after the profile is saved), keeping its storage. */
+export function updateSessionUser(patch) {
+  try {
+    for (const store of [localStorage, sessionStorage]) {
+      const raw = store.getItem(SESSION_KEY);
+      if (!raw) continue;
+      const session = JSON.parse(raw);
+      store.setItem(SESSION_KEY, JSON.stringify({ ...session, user: { ...session.user, ...patch } }));
+      return;
+    }
+  } catch {
+    /* storage blocked: the change lives only until reload */
   }
 }

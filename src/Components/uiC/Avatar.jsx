@@ -1,9 +1,10 @@
 /**
- * Initials avatar. Override the fill per person with `className` (e.g. "bg-accent").
+ * Initials avatar (shows the photo instead when `src` is given). Override the fill per person with `className` (e.g. "bg-accent").
  * Font size scales with the avatar size (Figma: 38px → 13.3px, 44px → 15.4px).
  */
 export default function Avatar({
   initials,
+  src,
   size = 38,
   className = "bg-primary",
   ringed = false,
@@ -11,7 +12,7 @@ export default function Avatar({
   return (
     <span
       className={[
-        "inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-bold text-white",
         ringed ? "border-2 border-ink" : "",
         className,
       ]
@@ -19,7 +20,7 @@ export default function Avatar({
         .join(" ")}
       style={{ width: size, height: size, fontSize: size * 0.35 }}
     >
-      {initials}
+      {src ? <img src={src} alt="" className="size-full rounded-full object-cover" /> : initials}
     </span>
   );
 }

@@ -38,8 +38,12 @@ export default function TopBar({ user, notifications = 0, onSearch }) {
         )}
       </button>
 
-      <div className="flex items-center gap-2.5">
-        <Avatar initials={user.initials} size={40} />
+      <a
+        href="/app/profile"
+        aria-label="Open your profile"
+        className="flex items-center gap-2.5 rounded-xl p-1 transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
+        <Avatar initials={user.initials} src={user.avatarUrl} size={40} />
         <div className="flex flex-col">
           <span className="flex items-center gap-[5px] text-sm font-bold leading-5 text-fg">
             {user.name}
@@ -47,7 +51,7 @@ export default function TopBar({ user, notifications = 0, onSearch }) {
           </span>
           <span className="text-[13px] leading-[19px] text-fg-2">{user.meta}</span>
         </div>
-      </div>
+      </a>
     </header>
   );
 }
