@@ -46,6 +46,7 @@ import {
   ChevronDown,
   Pencil,
   Camera,
+  BadgeCheck,
 } from "lucide-react";
 
 /**
@@ -102,6 +103,7 @@ const ICONS = {
   chevronDown: ChevronDown,
   pencil: Pencil,
   camera: Camera,
+  verified: BadgeCheck,
 };
 
 // The only sizes allowed in the UI.

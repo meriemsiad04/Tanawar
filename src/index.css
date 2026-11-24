@@ -41,6 +41,16 @@
   --animate-overlay-in: overlay-in 200ms ease-out both;
   --animate-dialog-in: dialog-in 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 
+  /* Countdown flip-clock: top flap folds down, then the bottom flap falls into place */
+  --animate-flap-top: flap-top 300ms ease-in both;
+  --animate-flap-bottom: flap-bottom 300ms 300ms ease-out both;
+
+  @keyframes flap-top {
+    to { transform: rotateX(-90deg); }
+  }
+  @keyframes flap-bottom {
+    from { transform: rotateX(90deg); }
+  }
   @keyframes overlay-in {
     from { opacity: 0; }
   }
@@ -125,8 +135,10 @@ body {
    individual transform properties don't conflict with the tilt `transform`. */
 @media (prefers-reduced-motion: reduce) {
   .animate-overlay-in,
-  .animate-dialog-in {
-    animation: none;
+  .animate-dialog-in,
+  .animate-flap-top,
+  .animate-flap-bottom {
+    display: none;
   }
   .reveal,
   .reveal-scale {

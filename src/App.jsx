@@ -2,6 +2,7 @@ import PublicLayout from "./layouts/PublicLayout.jsx";
 import StudentLayout from "./layouts/StudentLayout.jsx";
 import LandingPage from "./pages/public/LandingPage.jsx";
 import Dashboard from "./pages/Student/Dashboard.jsx";
+import ClassroomP from "./pages/Student/ClassroomP.jsx";
 import ProfileP from "./pages/Student/Profile/ProfileP.jsx";
 import EditorProfileP from "./pages/Student/Profile/EditorProfileP.jsx";
 import { clearSession, getSession } from "./services/authService.js";
@@ -45,6 +46,7 @@ export default function App() {
     const page =
       path === "/app/profile" ? { key: "profile", node: <ProfileP /> }
       : path === "/app/profile/edit" ? { key: "profile", node: <EditorProfileP mode="edit" /> }
+      : path.startsWith("/app/classroom/") ? { key: "dashboard", node: <ClassroomP key={path} sessionId={decodeURIComponent(path.slice("/app/classroom/".length))} /> }
       : { key: "dashboard", node: <Dashboard user={user} /> };
     return (
       <StudentLayout active={page.key} user={user} notifications={2} onLogout={handleLogout}>
