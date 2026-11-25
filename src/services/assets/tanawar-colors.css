@@ -1,0 +1,43 @@
+/* TANAWAR — Foundations & Components (docs v1.1)
+   Extracted color tokens from the provided palette reference.
+*/
+
+:root {
+  /* Brand / primary */
+  --color-ink: #1B1664;
+  --color-ink-2: #2B2394;
+  --color-primary: #4739E7;
+  --color-primary-soft: #EDECED;
+  --color-primary-text: #3A2DD0;
+  --color-accent: #6A5CF5;
+  --color-accent-ink: #2D24A8;
+  --color-accent-soft: #F1F0FF;
+  --color-accent-line: #DFDDFF;
+  --color-highlight: #FFB800;
+
+  /* Backgrounds / surfaces */
+  --color-bg: #F8F8FA;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F1F1F6;
+
+  /* Lines / foreground text */
+  --color-line: #E4E3EE;
+  --color-line-strong: #CBC9DC;
+  --color-fg: #17144D;
+  --color-fg-2: #4A4868;
+  --color-fg-3: #5C5A78;
+
+  /* Status colors */
+  --color-danger: #C81E1E;
+  --color-danger-soft: #FDECEC;
+  --color-warn: #A35A00;
+  --color-warn-soft: #FFF4D6;
+  --color-live: #C2321F;
+
+  /* Text / foreground on colored backgrounds */
+  --color-on-dark: #FFFFFF;
+  --color-on-dark-2: #C9C6F5;
+  --color-side-fg: #DCDAFB;
+  --color-side-label: #A9A3F0;
+  --color-on-highlight: #2A2000;
+}
