@@ -29,7 +29,7 @@ export default function UpcomingRow({
         <p className="truncate text-[13px] leading-[19px] text-fg-2">{meta}</p>
       </div>
       {/* Badge + action stack on narrow columns so the title keeps room. */}
-      <div className="flex shrink-0 flex-col items-end gap-2 lg:flex-row lg:items-center lg:gap-3.5 xl:flex-col xl:items-end xl:gap-2 2xl:flex-row 2xl:items-center 2xl:gap-3.5">
+      <div className="flex shrink-0 flex-col items-end gap-2 2xl:flex-row 2xl:items-center 2xl:gap-3.5">
         <SessionStatusBadge tone={statusTone}>{status}</SessionStatusBadge>
         <Button size="s" variant={actionVariant} onClick={onAction}>
           {actionLabel}
