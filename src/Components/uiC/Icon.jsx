@@ -47,6 +47,8 @@ import {
   Pencil,
   Camera,
   BadgeCheck,
+  Download,
+  CircleHelp,
 } from "lucide-react";
 
 /**
@@ -104,6 +106,8 @@ const ICONS = {
   pencil: Pencil,
   camera: Camera,
   verified: BadgeCheck,
+  download: Download,
+  help: CircleHelp,
 };
 
 // The only sizes allowed in the UI.

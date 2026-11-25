@@ -1,11 +1,12 @@
 import { ApiError, apiRequest } from "./apiClient.js";
 import { getSession, updateSessionUser } from "./authService.js";
+import { listSessions } from "./sessionsService.js";
 
 /**
  * Student profile: the only place the frontend talks to the profile endpoints.
  *
  * Expected backend contract (Bearer token; adjust here when the API is built):
- *   GET /students/me/profile        → { fullName, major, level, yearsAtUniversity, avatarUrl, birthdate, bio, strongModules[], memberSince }
+ *   GET /students/me/profile        → { fullName, major, level, avatarUrl, birthdate, bio, strongModules[], memberSince }
  *   PUT /students/me/profile        body: same fields (avatarUrl: data URL | null | unchanged URL) → saved profile
  *   GET /students/me/rating         → { average: number, count: number, reviews: [{ id, rating, comment, author, createdAt }] }
  *   GET /students/me/hosted-sessions→ [{ id, title, module, level, startsAt, durationMin, mode, location, seats, booked, status }]
@@ -22,14 +23,13 @@ const sessionPatch = (p) => ({
   fullName: p.fullName,
   field: p.major,
   level: p.level,
-  yearsAtUniversity: p.yearsAtUniversity,
   avatarUrl: p.avatarUrl || null,
   profileCompleted: true,
 });
 
 export const profileFromSession = () => {
   const u = getSession()?.user ?? {};
-  return { fullName: u.fullName ?? "", major: u.field ?? "", level: u.level ?? "", yearsAtUniversity: u.yearsAtUniversity ?? "", avatarUrl: u.avatarUrl ?? null, birthdate: "", bio: "", strongModules: [] };
+  return { fullName: u.fullName ?? "", major: u.field ?? "", level: u.level ?? "", avatarUrl: u.avatarUrl ?? null, birthdate: "", bio: "", strongModules: [] };
 };
 
 const call = (path, opts) => apiRequest(path, { token: token(), ...opts });
@@ -59,8 +59,33 @@ export async function saveProfile(profile) {
   return { ...profile, ...saved };
 }
 
-export const getRating = () => call("/students/me/rating");
-export const getHostedSessions = () => call("/students/me/hosted-sessions");
+export const getRating = async () => {
+  if (isDemo()) return DEMO_RATING;
+  return call("/students/me/rating");
+};
+export const getHostedSessions = async () => {
+  if (isDemo()) {
+    // Dev demo account only: the demo sessions this student hosts (including ones created on the Sessions page).
+    const list = await listSessions();
+    return list
+      .filter((s) => s.myStatus === "host")
+      .map((s) => ({ ...s, booked: s.joined, status: new Date(s.startsAt) < new Date() ? "completed" : "scheduled" }));
+  }
+  return call("/students/me/hosted-sessions");
+};
+
+/* Dev demo account only: sample reviews. Dead code in production builds. */
+const DEMO_RATING = import.meta.env.DEV
+  ? {
+      average: 4.8,
+      count: 3,
+      reviews: [
+        { id: "rv1", rating: 5, comment: "Clear explanations and great exercises, thank you!", author: "Sara Mebarki", createdAt: "2026-11-18T17:00:00Z" },
+        { id: "rv2", rating: 5, comment: "Recursion finally makes sense.", author: "Nour Saidi", createdAt: "2026-11-10T15:30:00Z" },
+        { id: "rv3", rating: 4, comment: "Very helpful, a bit fast at the end.", author: "Karim Ouali", createdAt: "2026-10-29T10:00:00Z" },
+      ],
+    }
+  : null;
 export const getAttendance = async (from) => {
   if (isDemo()) return demoAttendance(from);
   return call(`/students/me/attendance?from=${from}`);

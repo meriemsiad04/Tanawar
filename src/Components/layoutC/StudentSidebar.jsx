@@ -8,7 +8,7 @@ const GROUPS = [
       { key: "dashboard", label: "Dashboard", icon: "home", href: "/app" },
       { key: "explore", label: "Sessions", icon: "compass", href: "/app/sessions" },
       { key: "recommendations", label: "For you", icon: "spark", href: "/app/recommendations" },
-      { key: "bookings", label: "My bookings", icon: "calendar", href: "/app/bookings", count: 2 },
+      { key: "bookings", label: "My bookings", icon: "calendar", href: "/app/bookings" },
     ],
   },
   {
@@ -29,8 +29,8 @@ const GROUPS = [
   },
 ];
 
-/** Student navigation rail (ink background). `active` is the item key. */
-export default function StudentSidebar({ active = "dashboard", user, onLogout }) {
+/** Student navigation rail (ink background). `active` is the item key; `counts` maps item keys to badge numbers. */
+export default function StudentSidebar({ active = "dashboard", user, onLogout, counts = {} }) {
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col justify-between overflow-y-auto bg-ink px-4 py-5">
       <nav aria-label="Student navigation" className="flex flex-col gap-1">
@@ -43,7 +43,8 @@ export default function StudentSidebar({ active = "dashboard", user, onLogout })
             <p className="pb-1.5 pl-2.5 pt-3.5 text-xs font-extrabold uppercase leading-4 tracking-[0.14em] text-[#a9a3f0]">
               {group.label}
             </p>
-            {group.items.map(({ key, label, icon, href, count }) => {
+            {group.items.map(({ key, label, icon, href }) => {
+              const count = counts[key];
               const isActive = key === active;
               return (
                 <a

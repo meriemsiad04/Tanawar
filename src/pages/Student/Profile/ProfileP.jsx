@@ -92,7 +92,7 @@ export default function ProfileP() {
                       <Icon name="check" size="sm" label="Verified" className="text-primary" />
                     </h1>
                     <p className="text-sm leading-5 text-fg-2">
-                      {[p.major, p.level, p.yearsAtUniversity ? `Year ${p.yearsAtUniversity} at UMBB` : null].filter(Boolean).join(" · ")}
+                      {[p.major, p.level].filter(Boolean).join(" · ")}
                     </p>
                   </div>
                   <a href="/app/profile/edit" className="contents">
