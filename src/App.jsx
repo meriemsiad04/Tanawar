@@ -105,7 +105,7 @@ export default function App() {
       : path === "/app/connections" || path === "/app/students" ? { key: "connections", node: <ConnectionsP /> }
       : path.startsWith("/app/students/") ? { key: "connections", node: <StudentProfileP key={path} studentId={decodeURIComponent(path.slice("/app/students/".length))} /> }
       : path === "/app/settings" ? { key: "settings", node: <SettingP /> }
-      : path === "/app/notifications" ? { key: "", node: <NotfP /> }
+      : path === "/app/notifications" ? { key: "notifications", node: <NotfP /> }
       : path === "/app/help" ? { key: "help", node: <HelpP /> }
       : path === "/app/modules" ? { key: "", node: <ModulesP /> }
       : path === "/app/classrooms" ? { key: "classrooms", node: <ClassroomsP /> }

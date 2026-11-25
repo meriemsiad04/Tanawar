@@ -375,8 +375,9 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
         />
       )}
 
-      {/* Two columns from lg (≥1024px): main column + a narrow right column that starts at the top with
-          "Create session" and the user's own sessions. On phones: greeting, right column, then the rest. */}
+      {/* Two columns from lg (≥1024px). Row 1: greeting | "Create session" (bottom-aligned with the greeting).
+          Row 2: main column | the user's sessions, so both columns start at the same height.
+          On phones: greeting, Create session, your sessions, then the rest. */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-1.5 lg:col-start-1 lg:row-start-1">
           <h1 className="font-serif text-[clamp(26px,2.1vw,30px)] font-bold leading-[1.27] tracking-[-0.005em] text-fg">
@@ -388,11 +389,12 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
           </p>
         </div>
 
+        <Button variant="amber" size="m" onClick={() => setCreateOpen(true)} className="w-full lg:col-start-2 lg:row-start-1 lg:self-end">
+          <Icon name="plus" size="sm" /> Create session
+        </Button>
+
         {/* Right column */}
-        <aside aria-label="Your sessions" className="flex min-w-0 flex-col gap-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:gap-6">
-          <Button variant="amber" size="m" onClick={() => setCreateOpen(true)} className="w-full">
-            <Icon name="plus" size="sm" /> Create session
-          </Button>
+        <aside aria-label="Your sessions" className="flex min-w-0 flex-col gap-6 lg:col-start-2 lg:row-start-2">
           <MySessionsPanel sessions={mine} runningId={running?.id} onEnd={endSession} />
           <Panel title="Needs your attention" className="flex flex-col gap-2.5">
             <div className="flex flex-col gap-2.5">

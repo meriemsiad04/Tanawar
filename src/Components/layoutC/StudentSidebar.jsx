@@ -17,6 +17,8 @@ const GROUPS = [
       { key: "resources", label: "Resources", icon: "books", href: "/app/resources" },
       { key: "connections", label: "Connections", icon: "users", href: "/app/connections" },
       {key:"classrooms", label:"Classrooms", icon:"video", href:"/app/classrooms"},
+      // Unread count shares the bell's store (useNavCounts → useNotifications), so both update together. Red like the bell.
+      { key: "notifications", label: "Notifications", icon: "bell", href: "/app/notifications", alert: true },
       { key: "profile", label: "Profile", icon: "user", href: "/app/profile" },
     ],
   },
@@ -52,7 +54,7 @@ export default function StudentSidebar({ active = "dashboard", user, onLogout, c
             <p className="hidden pb-1.5 pl-2.5 pt-3.5 text-xs font-extrabold uppercase leading-4 tracking-[0.14em] text-[#a9a3f0] short:pb-1 short:pt-2 lg:block">
               {group.label}
             </p>
-            {group.items.map(({ key, label, icon, href }) => {
+            {group.items.map(({ key, label, icon, href, alert }) => {
               const count = counts[key];
               const isActive = key === active;
               return (
@@ -70,8 +72,13 @@ export default function StudentSidebar({ active = "dashboard", user, onLogout, c
                   <Icon name={icon} />
                   <span className="sr-only lg:not-sr-only lg:min-w-0 lg:flex-1 lg:truncate">{label}</span>
                   {count ? (
-                    <span className="absolute right-1 top-1 rounded-full bg-highlight px-[5px] text-[10px] font-bold leading-4 text-[#2a2000] lg:static lg:px-[7px] lg:py-0.5 lg:text-xs">
-                      {count}
+                    <span
+                      className={`absolute right-1 top-1 rounded-full px-[5px] text-[10px] font-bold leading-4 lg:static lg:px-[7px] lg:py-0.5 lg:text-xs ${
+                        alert ? "bg-live text-white" : "bg-highlight text-[#2a2000]"
+                      }`}
+                    >
+                      {alert && count > 9 ? "9+" : count}
+                      {alert && <span className="sr-only"> unread</span>}
                     </span>
                   ) : null}
                 </a>

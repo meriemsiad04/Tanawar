@@ -1,25 +1,24 @@
 import { useEffect, useState } from "react";
-import { listNotifications } from "../services/notificationsService.js";
 import { listSessions } from "../services/sessionsService.js";
+import { useNotifications } from "./useNotifications.js";
 
 /**
  * Live badge numbers for the student shell: unread notifications (bell) and bookings (sidebar).
- * Every page is a full load for now (no router), so reading them once per page keeps them current.
+ * Unread notifications come from the shared notifications store, so reading one anywhere updates the bell at once.
+ * Bookings are read once per page (every page is a full load for now, no router).
  * Falls back to 0 while loading or if the API isn't reachable.
  */
 export function useNavCounts() {
-  const [counts, setCounts] = useState({ notifications: 0, bookings: 0 });
+  const { unread } = useNotifications();
+  const [bookings, setBookings] = useState(0);
   useEffect(() => {
     let active = true;
-    listNotifications()
-      .then((list) => active && setCounts((c) => ({ ...c, notifications: list.filter((n) => !n.read).length })))
-      .catch(() => {});
     listSessions()
-      .then((list) => active && setCounts((c) => ({ ...c, bookings: list.filter((s) => s.myStatus === "joined" || s.myStatus === "pending").length })))
+      .then((list) => active && setBookings(list.filter((s) => s.myStatus === "joined" || s.myStatus === "pending").length))
       .catch(() => {});
     return () => {
       active = false;
     };
   }, []);
-  return counts;
+  return { notifications: unread, bookings };
 }
