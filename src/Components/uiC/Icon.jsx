@@ -47,6 +47,7 @@ import {
   Pencil,
   Camera,
   BadgeCheck,
+  RefreshCw,
 } from "lucide-react";
 
 /**
@@ -104,6 +105,7 @@ const ICONS = {
   pencil: Pencil,
   camera: Camera,
   verified: BadgeCheck,
+  flip: RefreshCw,
 };
 
 // The only sizes allowed in the UI.

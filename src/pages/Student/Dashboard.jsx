@@ -14,12 +14,7 @@ import { useAsync } from "../../hooks/useAsync.js";
 import { getModules, getSuggestedStudents, sendFriendRequest } from "../../services/studentsService.js";
 
 // Placeholder data (Figma v1.1) until the sessions/bookings API is wired.
-const KPIS = [
-  { icon: "calendar", value: "6 / 8", label: "Sessions joined this month" },
-  { icon: "cap", value: "12", label: "Sessions hosted" },
-  { icon: "star", value: "4.7", label: "Host rating" },
-  { icon: "flame", value: "6", label: "Active days this month" },
-];
+
 
 const INITIAL_UPCOMING = [
   { id: "live-sql", day: "TODAY", time: "12:30", today: true, title: "Jointures SQL et normalisation", meta: "Bases de données · Online", status: "Live now", statusTone: "live", actionLabel: "Enter classroom", actionVariant: "primary", onAction: () => window.location.assign(classroomPath("live-sql")) },
@@ -120,7 +115,7 @@ function ModulesAndStudents() {
         ) : status === "error" || !data.modules ? (
           <Note>Your modules aren’t available right now.</Note>
         ) : modules.data.length ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
             {modules.data.slice(0, MODULES_SHOWN).map((m) => (
               <ModuleCard key={m.code} module={m} />
             ))}
@@ -298,9 +293,9 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
 
   return (
     <>
-      <div className="flex items-end justify-between gap-4">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="font-serif text-[30px] font-bold leading-[38px] tracking-[-0.005em] text-fg">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <h1 className="font-serif text-[clamp(26px,2.1vw,30px)] font-bold leading-[1.27] tracking-[-0.005em] text-fg">
             {greeting()}, {user.name}
           </h1>
           <p className="text-[15px] leading-[23px] text-fg-2">
@@ -340,10 +335,11 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
         />
       )}
 
-      <div className="flex items-start gap-6">
+      {/* Side rail only from xl (≥1280px); on smaller laptops it drops below so the main column keeps its width. */}
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-6">
           {/* Happening now */}
-          <section className="flex flex-col gap-3.5 rounded-[22px] bg-ink p-6">
+          <section className="flex flex-col gap-3.5 rounded-[22px] bg-ink p-6 short:gap-3 short:p-5">
             <div className="flex items-center justify-between">
               <p className="flex items-center gap-2 text-xs font-extrabold uppercase leading-4 tracking-[0.14em] text-on-dark-2">
                 <Icon name="clock" size="sm" className="size-4" /> Happening now
@@ -352,12 +348,12 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
                 <Icon name="video" size="sm" className="size-3.5" /> Online
               </span>
             </div>
-            <p className="text-[42px] font-extrabold leading-[46px] tracking-[-0.01em] text-white">12:30 – 13:30</p>
+            <p className="text-[clamp(34px,2.92vw,42px)] font-extrabold leading-[1.1] tracking-[-0.01em] text-white">12:30 – 13:30</p>
             <div className="flex flex-col gap-0.5">
               <p className="text-[17px] font-bold leading-6 text-white">Jointures SQL et normalisation</p>
               <p className="text-[13px] leading-[19px] text-on-dark-2">with Yacine Haddad · Bases de données</p>
             </div>
-            <div className="flex items-center gap-3.5">
+            <div className="flex flex-wrap items-center gap-3.5">
               <Button variant="amber" size="m" onClick={() => window.location.assign(classroomPath("live-sql"))}>
                 Enter classroom <span aria-hidden="true">→</span>
               </Button>
@@ -365,11 +361,7 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
             </div>
           </section>
 
-          <div className="flex gap-4">
-            {KPIS.map((k) => (
-              <KpiCard key={k.label} {...k} />
-            ))}
-          </div>
+         
 
           <Panel title="Your upcoming sessions" action={<ViewAll />} className="flex flex-col gap-1.5">
             <div>
@@ -381,7 +373,7 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
         </div>
 
         {/* Right rail */}
-        <div className="flex w-[360px] shrink-0 flex-col gap-6">
+        <div className={`grid gap-6 xl:flex xl:w-[320px] xl:shrink-0 xl:flex-col 2xl:w-[360px] ${running ? "lg:grid-cols-2" : ""}`}>
         <Panel title="Needs your attention" className="flex flex-col gap-2.5">
           <div className="flex flex-col gap-2.5">
             <Eyebrow>Join requests{running ? ` · ${running.title}` : ""}</Eyebrow>
@@ -403,8 +395,8 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
 
       {/* Recommended */}
       <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-0.5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-0.5">
             <h2 className="text-lg font-extrabold leading-6 text-fg">Recommended for you</h2>
             <p className="text-[13px] leading-[19px] text-fg-2">
               Based on your modules, field and level, connections, host ratings and timing.
@@ -413,7 +405,7 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
           <ViewAll />
         </div>
         {joinError && <p role="alert" className="text-[13px] font-bold text-live">{joinError}</p>}
-        <div className="flex items-stretch gap-5">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {RECOMMENDED.map((session) => (
             <RecommendedSessionCard
               key={session.id}

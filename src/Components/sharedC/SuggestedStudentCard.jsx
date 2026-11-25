@@ -14,7 +14,7 @@ export default function SuggestedStudentCard({ student, status = "idle", onAdd }
   const { id, fullName, major, level, rating, verified, avatarUrl, sharedModules = 0 } = student;
   const sent = status === "sent";
   return (
-    <article className="flex flex-col items-center gap-2 rounded-[20px] border border-line bg-surface p-5 text-center transition duration-200 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+    <article className="flex h-full flex-col items-center gap-2 rounded-[20px] border border-line bg-surface p-5 text-center transition duration-200 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       <Avatar initials={initialsOf(fullName)} src={avatarUrl} size={64} className="bg-accent" />
       <a
         href={`/app/students/${encodeURIComponent(id)}`}
@@ -33,10 +33,13 @@ export default function SuggestedStudentCard({ student, status = "idle", onAdd }
         <RatingStars value={rating} size="sm" />
         <span className="text-[13px] font-bold text-fg">{Number(rating).toFixed(1)}</span>
       </div>
+      {/* mt-auto pins the button to the card bottom so buttons line up across a grid row
+          (grid items stretch to the tallest card); pt-1.5 keeps the original spacing above it. */}
+      <div className="mt-auto w-full pt-1.5">
       <Button
         variant={sent ? "outline" : "primary"}
         size="s"
-        className="mt-1.5 w-full"
+        className="w-full"
         disabled={sent || status === "sending"}
         onClick={() => onAdd(student)}
         aria-label={sent ? `Friend request sent to ${fullName}` : `Add ${fullName} as a friend`}
@@ -51,6 +54,7 @@ export default function SuggestedStudentCard({ student, status = "idle", onAdd }
           "Add friend"
         )}
       </Button>
+      </div>
     </article>
   );
 }

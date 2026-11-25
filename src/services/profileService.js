@@ -38,7 +38,8 @@ export async function getProfile() {
   if (isDemo()) {
     // Dev demo account only: persists in localStorage because there is no backend.
     try {
-      return { ...profileFromSession(), ...JSON.parse(localStorage.getItem(DEMO_KEY) ?? "{}") };
+      // Sample details fill the empty fields; anything saved from the edit form wins.
+      return { ...profileFromSession(), ...DEMO_PROFILE, ...JSON.parse(localStorage.getItem(DEMO_KEY) ?? "{}") };
     } catch {
       return profileFromSession();
     }
@@ -59,8 +60,8 @@ export async function saveProfile(profile) {
   return { ...profile, ...saved };
 }
 
-export const getRating = () => call("/students/me/rating");
-export const getHostedSessions = () => call("/students/me/hosted-sessions");
+export const getRating = async () => (isDemo() ? DEMO_RATING : call("/students/me/rating"));
+export const getHostedSessions = async () => (isDemo() ? demoHostedSessions() : call("/students/me/hosted-sessions"));
 export const getAttendance = async (from) => {
   if (isDemo()) return demoAttendance(from);
   return call(`/students/me/attendance?from=${from}`);
@@ -81,4 +82,45 @@ function demoAttendance(from) {
     }
   }
   return out;
+}
+
+/* Dev demo account only: sample profile, reviews and hosted sessions so the profile page can be previewed.
+   Dead code in production builds; remove with the demo account. */
+const DEMO_PROFILE = import.meta.env.DEV
+  ? {
+      yearsAtUniversity: 3,
+      birthdate: "2004-03-17",
+      bio: "L3 Informatique student at UMBB. I love databases and clean code, and I host weekly SQL sessions before exams.\nAlways happy to help with Génie logiciel and UML too.",
+      strongModules: ["Bases de données", "Génie logiciel", "Systèmes d’exploitation", "Algorithmique"],
+      memberSince: "2025-10-06",
+    }
+  : null;
+
+const DEMO_RATING = import.meta.env.DEV
+  ? {
+      average: 4.7,
+      count: 23,
+      reviews: [
+        { id: "r1", rating: 5, author: "Sara Mebarki", comment: "Super clear explanation of normal forms, the BCNF examples finally made it click.", createdAt: "2026-11-18" },
+        { id: "r2", rating: 5, author: "Nour Saidi", comment: "Well prepared, shared the exercises as a PDF before the session. Thank you!", createdAt: "2026-11-04" },
+        { id: "r3", rating: 4, author: "Karim Ouali", comment: "Very helpful. A bit fast on the joins part, but the Q&A at the end covered it.", createdAt: "2026-10-21" },
+        { id: "r4", rating: 5, author: "Walid Bouzid", comment: "", createdAt: "2026-10-09" },
+      ],
+    }
+  : null;
+
+function demoHostedSessions() {
+  const at = (days, hour) => {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    d.setHours(hour, 0, 0, 0);
+    return d.toISOString();
+  };
+  return [
+    { id: "h1", title: "Jointures SQL et normalisation (1NF → BCNF)", module: "Bases de données", level: "L3", startsAt: at(0, 12), durationMin: 60, mode: "online", seats: 12, booked: 9, status: "live" },
+    { id: "h2", title: "Diagrammes UML : cas d’utilisation et séquence", module: "Génie logiciel", level: "L3", startsAt: at(3, 14), durationMin: 90, mode: "onsite", location: "Bloc 5, Salle 12", seats: 20, booked: 14, status: "scheduled" },
+    { id: "h3", title: "Ordonnancement des processus : exercices type examen", module: "Systèmes d’exploitation", level: "L3", startsAt: at(-6, 10), durationMin: 120, mode: "onsite", location: "Amphi B", seats: 30, booked: 30, status: "completed" },
+    { id: "h4", title: "Requêtes SQL avancées : sous-requêtes et agrégats", module: "Bases de données", level: "L3", startsAt: at(-20, 16), durationMin: 60, mode: "online", seats: 15, booked: 11, status: "completed" },
+    { id: "h5", title: "Révision : modèle OSI en 1 heure", module: "Réseaux", level: "L3", startsAt: at(-27, 18), durationMin: 60, mode: "online", seats: 10, booked: 3, status: "cancelled" },
+  ];
 }

@@ -29,18 +29,27 @@ const GROUPS = [
   },
 ];
 
-/** Student navigation rail (ink background). `active` is the item key. */
+/**
+ * Student navigation rail (ink background). `active` is the item key.
+ * One fixed width (240px) on every laptop/desktop so the main column always gets the rest;
+ * only below lg (tablets) it collapses to an icon rail, with labels kept as tooltips and for screen readers.
+ * The links scroll on their own so the account card (log out) stays visible on short screens.
+ */
 export default function StudentSidebar({ active = "dashboard", user, onLogout }) {
   return (
-    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col justify-between overflow-y-auto bg-ink px-4 py-5">
-      <nav aria-label="Student navigation" className="flex flex-col gap-1">
-        <a href="/app" className="pb-5 pl-2 pt-1">
-          <Logo variant="onDark" imgClassName="h-7" />
-        </a>
+    <aside className="sticky top-0 flex h-screen w-[76px] shrink-0 flex-col gap-4 bg-ink px-3 py-5 short:gap-3 short:py-4 lg:w-60 lg:px-4">
+      <a href="/app" aria-label="TANAWAR home" className="flex shrink-0 justify-center pt-1 lg:justify-start lg:pl-2">
+        {/* Icon rail: crop the lockup to its mark (first 51 of 293 units). */}
+        <span className="block w-[23px] overflow-hidden lg:w-auto">
+          <Logo variant="onDark" imgClassName="h-7 max-w-none" />
+        </span>
+      </a>
 
+      <nav aria-label="Student navigation" className="-mx-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-1 [scrollbar-color:rgb(255_255_255/0.2)_transparent] [scrollbar-width:thin]">
         {GROUPS.map((group) => (
           <div key={group.label} className="flex flex-col gap-1">
-            <p className="pb-1.5 pl-2.5 pt-3.5 text-xs font-extrabold uppercase leading-4 tracking-[0.14em] text-[#a9a3f0]">
+            <div aria-hidden="true" className="mx-2 mb-1 mt-3 border-t border-white/10 lg:hidden" />
+            <p className="hidden pb-1.5 pl-2.5 pt-3.5 text-xs font-extrabold uppercase leading-4 tracking-[0.14em] text-[#a9a3f0] short:pb-1 short:pt-2 lg:block">
               {group.label}
             </p>
             {group.items.map(({ key, label, icon, href, count }) => {
@@ -49,17 +58,18 @@ export default function StudentSidebar({ active = "dashboard", user, onLogout })
                 <a
                   key={key}
                   href={href}
+                  title={label}
                   aria-current={isActive ? "page" : undefined}
-                  className={`flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-bold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
+                  className={`relative flex h-11 shrink-0 items-center justify-center gap-3 rounded-xl px-3 text-sm font-bold leading-5 transition-colors short:h-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 lg:justify-start ${
                     isActive
                       ? "bg-accent text-white"
                       : "text-[#dcdafb] hover:bg-white/10"
                   }`}
                 >
                   <Icon name={icon} />
-                  <span className="min-w-0 flex-1">{label}</span>
+                  <span className="sr-only lg:not-sr-only lg:min-w-0 lg:flex-1 lg:truncate">{label}</span>
                   {count ? (
-                    <span className="rounded-full bg-highlight px-[7px] py-0.5 text-xs font-bold leading-4 text-[#2a2000]">
+                    <span className="absolute right-1 top-1 rounded-full bg-highlight px-[5px] text-[10px] font-bold leading-4 text-[#2a2000] lg:static lg:px-[7px] lg:py-0.5 lg:text-xs">
                       {count}
                     </span>
                   ) : null}
@@ -70,8 +80,8 @@ export default function StudentSidebar({ active = "dashboard", user, onLogout })
         ))}
       </nav>
 
-      <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3">
-        <div className="min-w-0 flex-1">
+      <div className="flex shrink-0 items-center justify-center gap-3 rounded-2xl bg-white/10 p-1.5 lg:justify-start lg:px-4 lg:py-3 short:lg:py-2">
+        <div className="hidden min-w-0 flex-1 lg:block">
           <p className="truncate text-sm font-bold leading-5 text-white">
             {user?.fullName ?? "Guest"}
           </p>

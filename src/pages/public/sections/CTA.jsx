@@ -5,7 +5,7 @@ import ctaGlow from "../../../assets/landing/cta-glow.svg";
 export default function CTA() {
   const openSignIn = useSignIn();
   return (
-    <section className="px-6 pt-24 lg:px-16">
+    <section className="mx-auto w-full max-w-[1440px] px-6 pt-24 lg:px-16">
       <div className="relative flex flex-col items-center gap-[18px] overflow-hidden rounded-[32px] bg-ink px-6 py-[72px] text-center">
         <div
           aria-hidden="true"

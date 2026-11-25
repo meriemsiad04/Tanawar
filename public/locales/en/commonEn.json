@@ -1,0 +1,32 @@
+{
+  "landing": {
+    "hero": {
+      "badge": "Built for the University of Boumerdès (UMBB)",
+      "line1": "Learn together.",
+      "line2": "Share what you know.",
+      "lead": "TANAWAR connects verified UMBB students for peer-led study sessions. Publish a session in two minutes, join one in two clicks, and keep every PDF, video and link in one place.",
+      "cta": "Start learning",
+      "proof": "{count} UMBB students already learning together"
+    },
+    "campus": {
+      "eyebrow": "Today on campus",
+      "title": "Three sessions today.",
+      "caption": "Sample sessions. Point at a card to see what's inside, or tap it on a phone.",
+      "cardLabel": "{title}, {time}. Press Enter to see what's inside.",
+      "live": "Live now",
+      "onsite": "On-site",
+      "online": "Online",
+      "onlineClassroom": "Online classroom",
+      "minutes": "{n} min",
+      "seatsLeft": "{n} seats left",
+      "flip": "Flip",
+      "verified": "Verified student",
+      "cover": "What you'll cover",
+      "shared": "Shared in this session",
+      "pdf": "PDF",
+      "video": "Video",
+      "link": "Link",
+      "join": "Sign up to join"
+    }
+  }
+}

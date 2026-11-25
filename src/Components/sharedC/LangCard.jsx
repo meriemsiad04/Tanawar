@@ -10,7 +10,7 @@ export default function LangCard({ code, language, tagline, selected = false }) 
         <p className="text-[17px] font-bold leading-6 text-fg">{language}</p>
         <p className="text-[15px] leading-[23px] text-fg-2">{tagline}</p>
       </div>
-      <span className="flex size-[46px] shrink-0 items-center justify-center rounded-xl bg-ink text-sm font-bold text-white">
+      <span className="flex size-[46px] shrink-0 items-center justify-center rounded-xl bg-ink text-sm dark:bg-ink-2 font-bold text-white">
         {code}
       </span>
     </div>

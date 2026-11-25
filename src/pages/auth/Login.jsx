@@ -3,7 +3,8 @@ import AuthLayout from "../../layouts/AuthLayout.jsx";
 import Button from "../../Components/uiC/Button.jsx";
 import Icon from "../../Components/uiC/Icon.jsx";
 import Input from "../../Components/uiC/Input.jsx";
-import { DEMO_ACCOUNT, MATRICULE_PATTERN, signIn } from "../../services/authService.js";
+import GoogleAuthButton from "../../Components/sharedC/GoogleAuthButton.jsx";
+import { DEMO_ACCOUNT, DEMO_ADMIN, MATRICULE_PATTERN, signIn, signInWithGoogle } from "../../services/authService.js";
 
 function validate({ matricule, password }) {
   const errors = {};
@@ -20,8 +21,10 @@ function validate({ matricule, password }) {
  *  - open / onClose      modal visibility
  *  - onSuccess(user)     called after the backend accepts the credentials (handles the redirect)
  *  - onCreateAccount / onForgotPassword   footer + inline links
+ *  - onGoogleRegistration({ registrationToken, profile })  Google account with no TANAWAR account yet:
+ *                        continue in the sign-up pop-up (same verification as email sign-up)
  */
-export default function Login({ open, onClose, onSuccess, onCreateAccount, onForgotPassword }) {
+export default function Login({ open, onClose, onSuccess, onCreateAccount, onForgotPassword, onGoogleRegistration }) {
   const [values, setValues] = useState({ matricule: "", password: "", remember: true });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -80,6 +83,25 @@ export default function Login({ open, onClose, onSuccess, onCreateAccount, onFor
       setFormError(err?.message || "Something went wrong. Please try again.");
       setValues((v) => ({ ...v, password: "" }));
       passwordRef.current?.focus();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onGoogle = async (credential) => {
+    setLoading(true);
+    setFormError("");
+    try {
+      const res = await signInWithGoogle(credential, { remember: values.remember });
+      if (res.registrationRequired) {
+        reset();
+        onGoogleRegistration?.({ registrationToken: res.registrationToken, profile: res.profile });
+        return;
+      }
+      reset();
+      onSuccess?.(res.user);
+    } catch (err) {
+      setFormError(err?.message || "Google sign-in failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -180,17 +202,33 @@ export default function Login({ open, onClose, onSuccess, onCreateAccount, onFor
           )}
         </Button>
 
+        <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-fg-3" aria-hidden="true">
+          <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
+        </div>
+        <GoogleAuthButton onCredential={onGoogle} onError={(err) => setFormError(err.message)} disabled={loading} />
+
         {DEMO_ACCOUNT && (
           <p className="rounded-[10px] bg-accent-soft px-3 py-2 text-center text-[13px] leading-[18px] text-accent-ink">
             Demo (dev only): <b>{DEMO_ACCOUNT.matricule}</b> / <b>{DEMO_ACCOUNT.password}</b>
+            {DEMO_ADMIN && (
+              <>
+                <br />
+                Admin: <b>{DEMO_ADMIN.matricule}</b> / <b>{DEMO_ADMIN.password}</b>
+              </>
+            )}
           </p>
         )}
 
         <p className="pt-1 text-center text-[13px] leading-[18px] text-fg-2">
-          New to TANAWAR? {" "}
-          <a href="/faq" className="font-bold text-primary-text hover:underline focus-visible:underline focus-visible:outline-none">
-            read more
-          </a>
+          New to TANAWAR?{" "}
+          <button
+            type="button"
+            onClick={onCreateAccount}
+            disabled={loading}
+            className="cursor-pointer font-bold text-primary-text hover:underline focus-visible:underline focus-visible:outline-none"
+          >
+            Create an account
+          </button>
         </p>
       </form>
     </AuthLayout>

@@ -1,0 +1,32 @@
+{
+  "landing": {
+    "hero": {
+      "badge": "Conçu pour l'Université de Boumerdès (UMBB)",
+      "line1": "Apprendre ensemble.",
+      "line2": "Partager ce que l'on sait.",
+      "lead": "TANAWAR met en relation des étudiants vérifiés de l'UMBB pour des séances d'étude entre pairs. Publiez une séance en deux minutes, rejoignez-en une en deux clics, et gardez chaque PDF, vidéo et lien au même endroit.",
+      "cta": "Commencer à apprendre",
+      "proof": "{count} étudiants de l'UMBB apprennent déjà ensemble"
+    },
+    "campus": {
+      "eyebrow": "Aujourd'hui sur le campus",
+      "title": "Trois séances aujourd'hui.",
+      "caption": "Séances d'exemple. Survolez une carte pour voir son contenu, ou touchez-la sur un téléphone.",
+      "cardLabel": "{title}, {time}. Appuyez sur Entrée pour voir le contenu.",
+      "live": "En direct",
+      "onsite": "Sur place",
+      "online": "En ligne",
+      "onlineClassroom": "Salle de classe en ligne",
+      "minutes": "{n} min",
+      "seatsLeft": "{n} places restantes",
+      "flip": "Retourner",
+      "verified": "Étudiant vérifié",
+      "cover": "Au programme",
+      "shared": "Partagé dans cette séance",
+      "pdf": "PDF",
+      "video": "Vidéo",
+      "link": "Lien",
+      "join": "S'inscrire pour rejoindre"
+    }
+  }
+}
