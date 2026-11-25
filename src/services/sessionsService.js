@@ -2,9 +2,13 @@ import { apiRequest } from "./apiClient.js";
 import { getSession } from "./authService.js";
 
 /**
- * Session classroom + join/leave.
+ * Sessions list, classroom, join/leave and join requests.
  *
  * Expected backend contract (Bearer token; adjust here when the API is built):
+ *   GET  /sessions            → [{ id, title, description, module, level, startsAt (ISO), durationMin, seats, joined (participants so far),
+ *                                  mode: "online" | "onsite", meetingLink, location, visibility: "public" | "private",
+ *                                  host: { name, rating, verified }, myStatus: "none" | "joined" | "pending" | "host" }]
+ *                               (myStatus = the signed-in student's relation to the session)
  *   GET  /sessions/:id        → { id, type: "instant" | "scheduled", title, module, startsAt (ISO), durationMin, seats, joined (participants so far),
  *                                 mode: "online" | "onsite", meetingLink, location, host: { name },
  *                                 resources: [{ id, kind: "file" | "link", name, url }] }
@@ -13,6 +17,8 @@ import { getSession } from "./authService.js";
  *                               (any student who joined the session may attach; 403 otherwise)
  *   POST /sessions/:id/join   → 204
  *   POST /sessions/:id/leave  → 204
+ *   POST /sessions/:id/join-requests → 204 (private sessions: the host then approves or declines)
+ * Filtering happens here (filterSessions) so the API only has to return the list.
  */
 const token = () => getSession()?.token;
 const isDemo = () => Boolean(import.meta.env.DEV) && token() === "demo-token";
@@ -21,11 +27,49 @@ const sid = (id) => encodeURIComponent(id);
 
 export const classroomPath = (id) => `/app/classroom/${sid(id)}`;
 
+export async function listSessions() {
+  if (isDemo()) return demoSessions();
+  return call("/sessions");
+}
+
+/**
+ * Keeps the sessions matching every active filter. Empty values mean "All".
+ * `query` matches the title, description, module and host name (case-insensitive).
+ */
+export function filterSessions(list, { query = "", module = "", level = "", mode = "", visibility = "", availableOnly = false } = {}) {
+  const q = query.trim().toLowerCase();
+  return list.filter(
+    (s) =>
+      (!q || [s.title, s.description, s.module, s.host?.name].some((t) => t?.toLowerCase().includes(q))) &&
+      (!module || s.module === module) &&
+      (!level || s.level === level) &&
+      (!mode || s.mode === mode) &&
+      (!visibility || s.visibility === visibility) &&
+      (!availableOnly || s.seats - s.joined > 0)
+  );
+}
+
+/** Where the session happens: the platform name for online sessions (from the meeting link), else the room. */
+export function sessionPlace({ mode, meetingLink, location }) {
+  if (mode !== "online") return location ?? "";
+  let host = "";
+  try {
+    host = new URL(meetingLink).hostname;
+  } catch {
+    /* no or invalid link */
+  }
+  if (host.includes("meet.google")) return "Google Meet";
+  if (host.includes("discord")) return "Discord";
+  if (host.includes("zoom")) return "Zoom";
+  if (host.includes("teams")) return "Microsoft Teams";
+  return "Online classroom";
+}
+
 export async function getClassroom(id) {
   if (isDemo()) {
-    const demo = DEMO_CLASSROOMS[id];
+    const demo = DEMO_CLASSROOMS[id]?.() ?? demoSessionClassroom(id);
     if (!demo) throw new Error("Session not found.");
-    return demo();
+    return demo;
   }
   return call(`/sessions/${sid(id)}`);
 }
@@ -47,6 +91,10 @@ export async function joinSession(id) {
 
 export async function leaveSession(id) {
   if (!isDemo()) await call(`/sessions/${sid(id)}/leave`, { method: "POST" });
+}
+
+export async function requestToJoin(id) {
+  if (!isDemo()) await call(`/sessions/${sid(id)}/join-requests`, { method: "POST" });
 }
 
 /* Dev demo account only: sample sessions matching the dashboard placeholders. Dead code in production builds. */
@@ -71,3 +119,35 @@ const DEMO_CLASSROOMS = import.meta.env.DEV
       }),
     }
   : {};
+
+/* Dev demo account only: the Sessions page list (one card per button state). Dead code in production builds. */
+const at = (days, h, m = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(h, m, 0, 0);
+  return d.toISOString();
+};
+const DEMO_SESSIONS = import.meta.env.DEV
+  ? [
+      { id: "dp-bootcamp", title: "Dynamic Programming Bootcamp", description: "From memoization to tabulation: solve 6 classic exam problems together.", module: "Algorithms", level: "L2", startsAt: at(0, 18), durationMin: 90, seats: 20, joined: 14, mode: "online", meetingLink: "https://meet.google.com/", visibility: "public", host: { name: "Amine Khelifi", rating: 4.9, verified: true, className: "bg-primary" }, myStatus: "none" },
+      { id: "sql-joins", title: "SQL Joins & Normalization", description: "Hands-on practice before the TD exam.", module: "Databases", level: "L3", startsAt: at(1, 14), durationMin: 60, seats: 12, joined: 12, mode: "onsite", location: "Library, Room B12", visibility: "public", host: { name: "Amine Khelifi", rating: 4.9, verified: true, className: "bg-primary" }, myStatus: "none" },
+      { id: "react-hooks", title: "React Hooks Deep Dive", description: "useEffect, useMemo and custom hooks with a mini-project.", module: "Web Development", level: "L3", startsAt: at(2, 16, 30), durationMin: 120, seats: 15, joined: 6, mode: "online", meetingLink: "https://discord.gg/", visibility: "private", host: { name: "Sara Mebarki", rating: 4.8, verified: true, className: "bg-accent" }, myStatus: "none" },
+      { id: "eigenvalues", title: "Eigenvalues Made Simple", description: "Geometric intuition + exam-style exercises.", module: "Linear Algebra", level: "L1", startsAt: at(3, 10), durationMin: 75, seats: 25, joined: 9, mode: "onsite", location: "Amphi C, Faculty of Sciences", visibility: "public", host: { name: "Lina Hamidi", rating: 4.7, verified: true, className: "bg-warn" }, myStatus: "joined" },
+      { id: "fourier", title: "Fourier Transform Workshop", description: "MATLAB demos and solved series.", module: "Signal Processing", level: "M1", startsAt: at(4, 13), durationMin: 90, seats: 10, joined: 4, mode: "onsite", location: "FT Lab 3", visibility: "private", host: { name: "Karim Ouali", rating: 4.6, verified: true, className: "bg-ink-2" }, myStatus: "pending" },
+      { id: "os-scheduling", title: "Process Scheduling Q&A", description: "Bring your questions on FCFS, SJF, Round-Robin.", module: "Operating Systems", level: "L3", startsAt: at(5, 17), durationMin: 45, seats: 30, joined: 11, mode: "online", meetingLink: "https://meet.google.com/", visibility: "public", host: { name: "Amine Khelifi", rating: 4.9, verified: true, className: "bg-primary" }, myStatus: "none" },
+      { id: "graphs", title: "Graph Algorithms Study Group", description: "BFS, DFS and Dijkstra with paper-and-pen practice.", module: "Algorithms", level: "L2", startsAt: at(6, 15), durationMin: 60, seats: 8, joined: 3, mode: "onsite", location: "Library, Room A04", visibility: "public", host: { name: "Nour Saidi", rating: 4.4, verified: true, className: "bg-accent" }, myStatus: "none" },
+      { id: "recursion", title: "Recursion for Beginners", description: "Base cases, the call stack and classic recursive exercises.", module: "Algorithms", level: "L1", startsAt: at(0, 18), durationMin: 90, seats: 10, joined: 5, mode: "online", meetingLink: "https://meet.google.com/", visibility: "private", host: { name: "You", rating: 4.8, verified: true, className: "bg-primary" }, myStatus: "host" },
+    ]
+  : [];
+
+// Sessions the demo user hosts show their own name.
+const demoSessions = () => {
+  const me = getSession()?.user?.fullName;
+  return DEMO_SESSIONS.map((s) => (s.myStatus === "host" && me ? { ...s, host: { ...s.host, name: me } } : s));
+};
+
+// "Enter classroom" from the Sessions page opens the matching demo session.
+const demoSessionClassroom = (id) => {
+  const s = demoSessions().find((d) => d.id === id);
+  return s ? { ...s, type: "scheduled", host: { name: s.host.name }, resources: [] } : null;
+};

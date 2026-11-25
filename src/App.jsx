@@ -3,6 +3,7 @@ import StudentLayout from "./layouts/StudentLayout.jsx";
 import LandingPage from "./pages/public/LandingPage.jsx";
 import Dashboard from "./pages/Student/Dashboard.jsx";
 import ClassroomP from "./pages/Student/ClassroomP.jsx";
+import ExploreSP from "./pages/Student/sessions/ExploreSP.jsx";
 import ProfileP from "./pages/Student/Profile/ProfileP.jsx";
 import EditorProfileP from "./pages/Student/Profile/EditorProfileP.jsx";
 import { clearSession, getSession } from "./services/authService.js";
@@ -46,6 +47,7 @@ export default function App() {
     const page =
       path === "/app/profile" ? { key: "profile", node: <ProfileP /> }
       : path === "/app/profile/edit" ? { key: "profile", node: <EditorProfileP mode="edit" /> }
+      : path === "/app/sessions" ? { key: "explore", node: <ExploreSP user={user} /> }
       : path.startsWith("/app/classroom/") ? { key: "dashboard", node: <ClassroomP key={path} sessionId={decodeURIComponent(path.slice("/app/classroom/".length))} /> }
       : { key: "dashboard", node: <Dashboard user={user} /> };
     return (
