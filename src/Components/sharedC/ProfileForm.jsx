@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Avatar from "../uiC/Avatar.jsx";
 import Button from "../uiC/Button.jsx";
 import Icon from "../uiC/Icon.jsx";
@@ -48,12 +48,13 @@ function toAvatarDataUrl(file) {
 
 /**
  * Student profile form, shared by first-login setup and profile editing.
- * Props: initial (profile fields), submitLabel, onSubmit(profile) → Promise (throw to show an error), onCancel? (edit mode).
+ * Props: initial (profile fields), submitLabel, onSubmit(profile) → Promise (throw to show an error), onCancel? (edit mode),
+ *   onDirtyChange?(dirty) (Settings page: highlights unsaved edits and warns before leaving).
  */
-export default function ProfileForm({ initial, submitLabel, onSubmit, onCancel }) {
+export default function ProfileForm({ initial, submitLabel, onSubmit, onCancel, onDirtyChange }) {
   const fileRef = useRef(null);
   const bioId = useId();
-  const [values, setValues] = useState(() => ({
+  const [start] = useState(() => ({
     fullName: initial.fullName ?? "",
     major: initial.major ?? "",
     level: initial.level ?? "",
@@ -62,6 +63,11 @@ export default function ProfileForm({ initial, submitLabel, onSubmit, onCancel }
     strongModules: initial.strongModules ?? [],
     avatarUrl: initial.avatarUrl ?? null,
   }));
+  const [values, setValues] = useState(start);
+  const dirty = useMemo(() => JSON.stringify(values) !== JSON.stringify(start), [values, start]);
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);

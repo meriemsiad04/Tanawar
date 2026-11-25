@@ -1,5 +1,6 @@
 import { apiRequest } from "./apiClient.js";
 import { getSession } from "./authService.js";
+import { NOTIFICATION_KIND_PREF, getSettings } from "./settingsService.js";
 
 /**
  * Notifications (bell badge + hover preview → Notifications page).
@@ -44,7 +45,9 @@ export async function listNotifications() {
   if (isDemo()) {
     const read = demoReadIds();
     const decided = demoDecisions();
-    return demoNotifications().map((n) => ({
+    // The real server simply doesn't create notifications the student turned off (docs/settings.md); the demo filters them.
+    const prefs = await getSettings().then((x) => x.notifications).catch(() => null);
+    return demoNotifications().filter((n) => !prefs || prefs[NOTIFICATION_KIND_PREF[n.kind]] !== false).map((n) => ({
       ...n,
       ...(read === "all" || read.has(n.id) ? { read: true } : {}),
       ...(n.request && decided[n.request.id] ? { request: { ...n.request, status: decided[n.request.id] } } : {}),

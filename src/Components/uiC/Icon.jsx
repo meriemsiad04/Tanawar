@@ -61,6 +61,18 @@ import {
   DoorOpen,
   Medal,
   Target,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Shield,
+  Mail,
+  KeyRound,
+  Palette,
+  Type,
+  SlidersHorizontal,
+  UserX,
+  TriangleAlert,
+  Heart,
 } from "lucide-react";
 
 /**
@@ -132,6 +144,18 @@ const ICONS = {
   door: DoorOpen,
   medal: Medal,
   target: Target,
+  monitor: Monitor,
+  phone: Smartphone,
+  tablet: Tablet,
+  shield: Shield,
+  mail: Mail,
+  key: KeyRound,
+  palette: Palette,
+  type: Type,
+  sliders: SlidersHorizontal,
+  userX: UserX,
+  warning: TriangleAlert,
+  heart: Heart,
 };
 
 // The only sizes allowed in the UI.

@@ -9,6 +9,8 @@ import StudyIllustration from "../../../Components/sharedC/StudyIllustration.jsx
 import CreateStudyRoomModal from "../../../Components/sharedC/CreateStudyRoomModal.jsx";
 import { useLiveQuery } from "../../../hooks/useLiveQuery.js";
 import { useNow } from "../../../hooks/useNow.js";
+import { useSettings } from "../../../hooks/useSettings.js";
+import { DEFAULT_SETTINGS } from "../../../services/settingsService.js";
 import { MODULES_BY_LEVEL } from "../../../data/sessionOptions.js";
 import {
   POLL_MS,
@@ -105,7 +107,26 @@ function Milestones({ items }) {
   );
 }
 
-function MyStudy({ stats, now }) {
+/** Progress toward a goal, on the dark card. */
+function GoalBar({ label, done, target }) {
+  const pct = Math.min(100, Math.round((done / target) * 100));
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-baseline justify-between gap-2 text-xs">
+        <span className="font-bold uppercase tracking-wide text-on-dark-2">{label}</span>
+        <span className="font-bold tabular-nums">
+          {fmtDuration(done)} / {fmtDuration(target)} {pct >= 100 && <span className="text-highlight">· reached</span>}
+        </span>
+      </div>
+      <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} className="h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-highlight transition-[width] duration-700 ease-out" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+/** `learning` = the student's learning preferences (daily / weekly goal and goals, from Settings). */
+function MyStudy({ stats, now, learning }) {
   const live = liveStats(stats, now);
   const tiles = [
     ["This week", fmtDuration(live.weekSeconds)],
@@ -129,6 +150,22 @@ function MyStudy({ stats, now }) {
                 ? "Nice work today. Take a seat in a room to add more."
                 : "Join a room below: your timer starts the moment you sit down."}
           </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <GoalBar label="Daily goal" done={live.todaySeconds} target={learning.dailyGoalMinutes * 60} />
+            <GoalBar label="Weekly goal" done={live.weekSeconds} target={learning.weeklyGoalHours * 3600} />
+          </div>
+          {learning.goals.length > 0 && (
+            <ul aria-label="My learning goals" className="flex flex-wrap gap-2">
+              {learning.goals.map((g, i) => (
+                <li key={`${i}-${g}`} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold">
+                  <Icon name="target" size="sm" className="!size-3.5 text-highlight" /> {g}
+                </li>
+              ))}
+            </ul>
+          )}
+          <a href="/app/settings#learning" className="self-start text-xs font-bold text-on-dark-2 underline-offset-2 hover:text-white hover:underline">
+            Edit goals ›
+          </a>
           <dl className="grid grid-cols-2 gap-3 border-t border-white/10 pt-4 sm:grid-cols-4">
             {tiles.map(([label, value]) => (
               <div key={label} className="flex flex-col gap-0.5">
@@ -153,6 +190,7 @@ function MyStudy({ stats, now }) {
 export default function StudyRoomsP({ user }) {
   const rooms = useLiveQuery(listStudyRooms, POLL_MS.list);
   const stats = useLiveQuery(getMyStudyStats, POLL_MS.stats);
+  const settings = useSettings();
   const now = useNow();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("");
@@ -200,6 +238,7 @@ export default function StudyRoomsP({ user }) {
       {createOpen && (
         <CreateStudyRoomModal
           level={user?.level}
+          favoriteModules={settings.data?.learning.favoriteModules}
           onClose={() => setCreateOpen(false)}
           onCreated={(room) => window.location.assign(studyRoomPath(room.id))}
         />
@@ -245,7 +284,7 @@ export default function StudyRoomsP({ user }) {
       )}
 
       {stats.status === "ready" ? (
-        <MyStudy stats={stats.data} now={now} />
+        <MyStudy stats={stats.data} now={now} learning={(settings.data ?? DEFAULT_SETTINGS).learning} />
       ) : stats.status === "loading" ? (
         <div className="h-[220px] animate-pulse rounded-[22px] bg-surface-2" aria-hidden="true" />
       ) : null}

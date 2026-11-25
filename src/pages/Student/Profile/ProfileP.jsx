@@ -437,7 +437,7 @@ export default function ProfileP() {
                 <VerificationStatusBadge status={account.verificationStatus ?? "approved"} />
               </li>
             </ul>
-            <a href="/app/settings" className="text-[13px] font-bold text-primary-text hover:underline">Manage account ›</a>
+            <a href="/app/settings#account" className="text-[13px] font-bold text-primary-text hover:underline">Manage account ›</a>
           </Panel>
 
           <Panel title="Connections" action={<a href="/app/connections" className="text-sm font-bold text-primary-text hover:underline">See all</a>}>

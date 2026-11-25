@@ -53,18 +53,24 @@ export default function Dropdown({
   useLayoutEffect(() => {
     if (!open) return;
     const place = () => {
-      const r = triggerRef.current?.getBoundingClientRect();
-      if (!r) return;
-      const below = window.innerHeight - r.bottom - GAP - 8;
+      const box = triggerRef.current?.getBoundingClientRect();
+      if (!box) return;
+      // The "Text size" setting zooms the root (src/index.css): rects and the viewport are in zoomed px,
+      // while the list's fixed position is in CSS px, so convert everything to CSS px first.
+      const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+      const r = { top: box.top / z, bottom: box.bottom / z, left: box.left / z, width: box.width / z };
+      const vh = window.innerHeight / z;
+      const vw = window.innerWidth / z;
+      const below = vh - r.bottom - GAP - 8;
       const above = r.top - GAP - 8;
       const wanted = Math.min(MAX_LIST_HEIGHT, (listRef.current?.scrollHeight ?? MAX_LIST_HEIGHT) + 2);
       const up = below < wanted && above > below;
       const width = Math.max(r.width, 200);
       setPos({
-        left: Math.max(8, Math.min(r.left, window.innerWidth - width - 8)),
+        left: Math.max(8, Math.min(r.left, vw - width - 8)),
         width,
         maxHeight: Math.max(120, Math.min(MAX_LIST_HEIGHT, up ? above : below)),
-        ...(up ? { bottom: window.innerHeight - r.top + GAP } : { top: r.bottom + GAP }),
+        ...(up ? { bottom: vh - r.top + GAP } : { top: r.bottom + GAP }),
       });
     };
     place();

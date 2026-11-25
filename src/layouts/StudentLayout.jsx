@@ -1,14 +1,27 @@
+import { useEffect } from "react";
 import StudentSidebar from "../Components/layoutC/StudentSidebar.jsx";
 import TopBar from "../Components/layoutC/TopBar.jsx";
+import { useI18n } from "../hooks/useI18n.js";
 import { useNavCounts } from "../hooks/useNavCounts.js";
+import { useSettings } from "../hooks/useSettings.js";
 
 /**
  * Student shell: fixed-width ink sidebar + sticky app bar; the content column takes the remaining width.
  * Takes `children` for now (no router yet); swap to <Outlet /> when react-router is added.
  * Badge numbers (unread notifications, bookings) are loaded here with useNavCounts.
+ * The account's settings load here too: their appearance is applied by the settings store and the language is
+ * synced into i18n, so a student's choices follow them to every device.
  */
 export default function StudentLayout({ active, user, onLogout, children }) {
   const counts = useNavCounts();
+  const { data: settings } = useSettings();
+  const { lang, setLang } = useI18n();
+  const accountLang = settings?.language;
+
+  useEffect(() => {
+    if (accountLang && accountLang !== lang) setLang(accountLang);
+  }, [accountLang, lang, setLang]);
+
   return (
     <div className="flex min-h-screen bg-bg">
       <StudentSidebar active={active} user={user} onLogout={onLogout} counts={counts} />

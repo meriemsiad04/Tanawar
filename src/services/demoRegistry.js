@@ -120,8 +120,14 @@ function createDemoRegistry() {
     },
 
     signIn(matricule, password) {
-      const rec = load().find((r) => r.matricule === matricule && r.password && r.password === password);
-      return rec ? { token: `demo-reg:${rec.id}`, user: userOf(rec) } : null;
+      const list = load();
+      const rec = list.find((r) => r.matricule === matricule && r.password && r.password === password);
+      if (!rec) return null;
+      if (rec.deactivatedAt) {
+        delete rec.deactivatedAt; // signing in again reactivates a deactivated account
+        save(list);
+      }
+      return { token: `demo-reg:${rec.id}`, user: userOf(rec) };
     },
 
     signInWithGoogle(email) {
@@ -130,6 +136,34 @@ function createDemoRegistry() {
     },
 
     me: (token) => userOf(byToken(token).rec),
+
+    /* Settings → account (see accountService). `currentPassword` is checked like the real server must. */
+    checkPassword(token, currentPassword) {
+      const { rec } = byToken(token);
+      if (rec.password && rec.password !== currentPassword) {
+        throw new ApiError("Your current password is incorrect.", { status: 401, code: "WRONG_PASSWORD" });
+      }
+    },
+    updateAccount(token, { email, password }) {
+      const { list, rec } = byToken(token);
+      if (email) {
+        const clash = taken(list, { matricule: rec.matricule, email }, rec.id);
+        if (clash) throw clash;
+        rec.email = email;
+      }
+      if (password) rec.password = password;
+      save(list);
+      return userOf(rec);
+    },
+    deactivate(token) {
+      const { list, rec } = byToken(token);
+      rec.deactivatedAt = new Date().toISOString();
+      save(list);
+    },
+    remove(token) {
+      const { list, rec } = byToken(token);
+      save(list.filter((r) => r.id !== rec.id));
+    },
     myVerification: (token) => verificationOf(byToken(token).rec),
 
     async resubmit(token, { fullName, matricule, documentType, document }) {

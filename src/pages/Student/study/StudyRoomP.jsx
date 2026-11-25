@@ -3,6 +3,8 @@ import Button from "../../../Components/uiC/Button.jsx";
 import Icon from "../../../Components/uiC/Icon.jsx";
 import Avatar from "../../../Components/uiC/Avatar.jsx";
 import ConfirmDialog from "../../../Components/sharedC/ConfirmDialog.jsx";
+import { useSettings } from "../../../hooks/useSettings.js";
+import { DEFAULT_SETTINGS } from "../../../services/settingsService.js";
 import StudyIllustration from "../../../Components/sharedC/StudyIllustration.jsx";
 import { LiveCount } from "../../../Components/sharedC/StudyRoomCard.jsx";
 import { avatarFill, firstName, initialsOf } from "../../../Components/sharedC/studyUi.js";
@@ -190,6 +192,7 @@ export default function StudyRoomP({ roomId }) {
   const stats = useLiveQuery(getMyStudyStats, POLL_MS.stats);
   const now = useNow();
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const settings = useSettings();
   const meId = useMemo(() => myId(), []);
 
   const { data, status, error, inRoom } = room;
@@ -209,15 +212,19 @@ export default function StudyRoomP({ roomId }) {
   const myStats = stats.data ? liveStats(stats.data, now) : null;
   const nextMilestone = myStats ? studyMilestones(myStats).find((m) => !m.unlocked) : null;
 
-  // The tab title shows the running timer, so it stays visible from other tabs.
+  // Study With Me preferences (Settings → Preferences → Learning). Defaults apply until they load.
+  const swm = (settings.data ?? DEFAULT_SETTINGS).learning.studyWithMe;
+
+  // The tab title shows the running timer, so it stays visible from other tabs (unless turned off in Settings).
+  const tabTimer = inRoom && swm.timerInTab ? fmtClock(mySeconds) : null;
   useEffect(() => {
     if (!data) return;
     const previous = document.title;
-    document.title = inRoom ? `${fmtClock(mySeconds)} · ${data.room.title}` : `${data.room.title} · Study With Me`;
+    document.title = tabTimer ? `${tabTimer} · ${data.room.title}` : `${data.room.title} · Study With Me`;
     return () => {
       document.title = previous;
     };
-  }, [data, inRoom, mySeconds]);
+  }, [data, tabTimer]);
 
   const leave = useCallback(async () => {
     await room.leave();
@@ -335,7 +342,7 @@ export default function StudyRoomP({ roomId }) {
             nextMilestone={nextMilestone}
             busy={room.busy}
             onJoin={room.join}
-            onLeave={() => setConfirmLeave(true)}
+            onLeave={() => (swm.confirmLeave ? setConfirmLeave(true) : leave())}
           />
           <Ranking rows={ranked} meId={meId} />
         </aside>

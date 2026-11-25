@@ -304,7 +304,7 @@ export default function NotfP() {
             </ul>
 
             <a
-              href="/app/settings"
+              href="/app/settings#notifications"
               className="flex items-center gap-2 border-t border-line pt-4 text-[13px] font-bold text-primary-text hover:underline"
             >
               <Icon name="gear" size="sm" className="!size-4" /> Notification settings

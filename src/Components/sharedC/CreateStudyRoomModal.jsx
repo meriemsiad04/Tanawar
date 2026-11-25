@@ -10,26 +10,30 @@ import { useDialog } from "../../hooks/useDialog.js";
 import { MODULES_BY_LEVEL } from "../../data/sessionOptions.js";
 import { STUDY_LIMITS, createStudyRoom, joinStudyRoom, validateStudyRoom } from "../../services/studyRoomsService.js";
 
-/** The student's own level first, then every other module once (placeholder list until the modules API exists). */
-function moduleOptions(level) {
+/**
+ * The student's favourite modules first (Settings → Learning), then their level's, then every other module once
+ * (placeholder list until the modules API exists).
+ */
+function moduleOptions(level, favorites = []) {
   const mine = MODULES_BY_LEVEL[level] ?? [];
   const rest = Object.values(MODULES_BY_LEVEL).flat().filter((m) => !mine.includes(m));
-  return [...new Set([...mine, ...rest.sort((a, b) => a.localeCompare(b, "fr"))]), "Other / general revision"];
+  return [...new Set([...favorites, ...mine, ...rest.sort((a, b) => a.localeCompare(b, "fr"))]), "Other / general revision"];
 }
 
 /**
- * "Open a study room" pop-up. Creates the room, then seats the creator in it (their timer starts),
+ * "Open a study room" pop-up. `favoriteModules` (from Settings) are offered first. Creates the room, then seats the creator in it (their timer starts),
  * and calls `onCreated(room)`. Mount it only while open.
  */
-export default function CreateStudyRoomModal({ level, onClose, onCreated }) {
+export default function CreateStudyRoomModal({ level, favoriteModules = [], onClose, onCreated }) {
   const titleId = useId();
   const descId = useId();
   const panelRef = useRef(null);
-  const [form, setForm] = useState({ title: "", module: "", description: "" });
+  // A single favourite module is pre-selected; with several, they're listed first.
+  const [form, setForm] = useState({ title: "", module: favoriteModules.length === 1 ? favoriteModules[0] : "", description: "" });
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState(null);
-  const options = useMemo(() => moduleOptions(level), [level]);
+  const options = useMemo(() => moduleOptions(level, favoriteModules), [level, favoriteModules]);
 
   const close = () => {
     if (!busy) onClose?.();

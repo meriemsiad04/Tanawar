@@ -139,11 +139,12 @@ body {
 /* Free the compositing layer once the animation is done is not needed:
    individual transform properties don't conflict with the tilt `transform`. */
 @media (prefers-reduced-motion: reduce) {
+  /* Skip the entrance animations, but keep the elements (dialogs, overlays) visible. */
   .animate-overlay-in,
   .animate-dialog-in,
   .animate-flap-top,
   .animate-flap-bottom {
-    display: none;
+    animation: none;
   }
   .reveal,
   .reveal-scale {
@@ -152,4 +153,33 @@ body {
     scale: none;
     transition: none;
   }
+}
+
+/* ---- Appearance settings (applied by src/services/appearance.js and the script in index.html) ---- */
+/* Font size: zoom scales px and rem values alike (most text sizes here are px). */
+:root[data-font-size="small"] {
+  zoom: 0.9;
+}
+:root[data-font-size="large"] {
+  zoom: 1.125;
+}
+
+/* "Reduce animations": same effect as the OS setting, for students who only want it in TANAWAR. */
+:root[data-reduce-motion] {
+  scroll-behavior: auto;
+}
+:root[data-reduce-motion] *,
+:root[data-reduce-motion] *::before,
+:root[data-reduce-motion] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0ms !important;
+}
+:root[data-reduce-motion] .reveal,
+:root[data-reduce-motion] .reveal-scale {
+  opacity: 1;
+  translate: none;
+  scale: none;
 }

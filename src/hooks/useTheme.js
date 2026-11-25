@@ -1,55 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
+import { applyAppearance, onAppearanceChange } from "../services/appearance.js";
+import { settingsStore } from "../services/settingsService.js";
 
-const KEY = "theme";
-const root = () => document.documentElement;
-
-function readSaved() {
-  try {
-    const t = localStorage.getItem(KEY);
-    return t === "dark" || t === "light" ? t : null;
-  } catch {
-    return null;
-  }
-}
+const current = () => (document.documentElement.classList.contains("dark") ? "dark" : "light");
 
 /**
  * Light / dark theme.
- * The initial class is set by the inline script in index.html (no flash);
- * this hook reads it, toggles it, and remembers the choice in localStorage.
- * Without a saved choice it follows the OS setting live.
+ * The initial class is set by the inline script in index.html (no flash). Applying and saving goes through
+ * services/appearance.js, so the navbar toggle and the Settings page stay in sync.
+ * Without a saved choice ("system") it follows the OS setting live.
+ * Returns { theme: "light" | "dark" (what is shown), toggle }.
  */
 export default function useTheme() {
-  const [theme, setTheme] = useState(() =>
-    root().classList.contains("dark") ? "dark" : "light"
-  );
+  const [theme, setTheme] = useState(current);
 
-  useEffect(() => {
-    root().classList.toggle("dark", theme === "dark");
-  }, [theme]);
-
-  // Follow the system preference until the user picks a theme.
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = (e) => {
-      if (!readSaved()) setTheme(e.matches ? "dark" : "light");
-    };
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
+  useEffect(() => onAppearanceChange(() => setTheme(current())), []);
 
   const toggle = useCallback(() => {
-    const next = root().classList.contains("dark") ? "light" : "dark";
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!reduce) {
-      root().classList.add("theme-transition");
-      window.setTimeout(() => root().classList.remove("theme-transition"), 320);
-    }
-    try {
-      localStorage.setItem(KEY, next);
-    } catch {
-      /* storage blocked: the choice just won't persist */
-    }
-    setTheme(next);
+    const next = current() === "dark" ? "light" : "dark";
+    applyAppearance({ theme: next });
+    settingsStore.saveTheme(next); // signed-in students: remember it on the account too
   }, []);
 
   return { theme, toggle };
