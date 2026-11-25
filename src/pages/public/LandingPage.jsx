@@ -1,4 +1,5 @@
 import Hero from "./sections/Hero.jsx";
+import TodayOnCampus from "./sections/TodayOnCampus.jsx";
 import Stats from "./sections/Stats.jsx";
 import How from "./sections/How.jsx";
 import Features from "./sections/Features.jsx";
@@ -9,6 +10,7 @@ export default function LandingPage() {
   return (
     <>
       <Hero />
+      <TodayOnCampus />
       <Stats />
       <How />
       <Features />

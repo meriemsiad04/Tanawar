@@ -13,8 +13,8 @@ const goSearch = (e) => {
 /** Student app bar: search (→ Sessions), language, notifications, user chip. */
 export default function TopBar({ user, notifications = 0, onSearch }) {
   return (
-    <header className="flex h-[72px] shrink-0 items-center gap-3 border-b border-line bg-surface px-8">
-      <form role="search" onSubmit={goSearch} className="w-full max-w-[520px]">
+    <header className="sticky top-0 z-30 flex h-[72px] shrink-0 items-center gap-3 border-b border-line bg-surface px-6 short:h-16 xl:px-8">
+      <form role="search" onSubmit={goSearch} className="w-full min-w-0 max-w-[520px]">
         <label className="flex h-11 items-center gap-2.5 rounded-xl bg-surface-2 px-3.5 text-fg-3 focus-within:ring-2 focus-within:ring-primary/40">
           <Icon name="search" size="sm" />
           <input
@@ -52,15 +52,15 @@ export default function TopBar({ user, notifications = 0, onSearch }) {
       <a
         href="/app/profile"
         aria-label="Open your profile"
-        className="flex items-center gap-2.5 rounded-xl p-1 transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        className="flex shrink-0 items-center gap-2.5 rounded-xl p-1 transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         <Avatar initials={user.initials} src={user.avatarUrl} size={40} />
-        <div className="flex flex-col">
-          <span className="flex items-center gap-[5px] text-sm font-bold leading-5 text-fg">
+        <div className="hidden flex-col xl:flex">
+          <span className="flex items-center gap-[5px] whitespace-nowrap text-sm font-bold leading-5 text-fg">
             {user.name}
             <Icon name="check" size="sm" label="Verified" className="size-[15px] text-primary" />
           </span>
-          <span className="text-[13px] leading-[19px] text-fg-2">{user.meta}</span>
+          <span className="whitespace-nowrap text-[13px] leading-[19px] text-fg-2">{user.meta}</span>
         </div>
       </a>
     </header>

@@ -49,6 +49,7 @@ import {
   BadgeCheck,
   Download,
   CircleHelp,
+  RefreshCw,
 } from "lucide-react";
 
 /**
@@ -108,6 +109,7 @@ const ICONS = {
   verified: BadgeCheck,
   download: Download,
   help: CircleHelp,
+  flip: RefreshCw,
 };
 
 // The only sizes allowed in the UI.

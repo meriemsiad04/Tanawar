@@ -41,7 +41,7 @@ const FEATURES = [
 
 export default function Features() {
   return (
-    <section id="features" className="flex scroll-mt-4 flex-col gap-5 px-6 pt-24 lg:px-16">
+    <section id="features" className="mx-auto w-full max-w-[1440px] flex scroll-mt-4 flex-col gap-5 px-6 pt-24 lg:px-16">
       <Reveal className="pb-7">
         <SectionTitle eyebrow="Features">
           Everything a study group needs, nothing it doesn’t

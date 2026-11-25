@@ -16,8 +16,11 @@ import ClassroomsP from "./pages/Student/ClassroomsP.jsx";
 import ProfileP from "./pages/Student/Profile/ProfileP.jsx";
 import EditorProfileP from "./pages/Student/Profile/EditorProfileP.jsx";
 import StudentProfileP from "./pages/Student/Profile/StudentProfileP.jsx";
+import VerificationStatusP from "./pages/Student/VerificationStatusP.jsx";
 import NotFoundP from "./pages/errors/NotFoundP.jsx";
-import { clearSession, getSession } from "./services/authService.js";
+import AdminLayout from "./layouts/AdminLayout.jsx";
+import RegistrationsP from "./pages/admin/RegistrationsP.jsx";
+import { HOME_BY_ROLE, VERIFY_PATH, clearSession, getSession, isVerified } from "./services/authService.js";
 
 const SETUP_PATH = "/app/profile/setup";
 
@@ -34,7 +37,44 @@ const initialsOf = (name = "") =>
 export default function App() {
   const session = getSession();
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  const role = session?.user?.role;
+
+  // Admin area. The role check here is UX only: the server must reject non-admins on every /admin/* endpoint.
+  if (path.startsWith("/admin") && session?.user) {
+    if (role !== "admin") {
+      window.location.replace(HOME_BY_ROLE.student);
+      return null;
+    }
+    // Only the registration review queue exists so far; the admin dashboard will add its pages here.
+    if (path !== "/admin/registrations") {
+      window.location.replace("/admin/registrations");
+      return null;
+    }
+    return (
+      <AdminLayout user={session.user} onLogout={handleLogout}>
+        <RegistrationsP />
+      </AdminLayout>
+    );
+  }
+
   if (path.startsWith("/app") && session?.user) {
+    if (role === "admin") {
+      window.location.replace(HOME_BY_ROLE.admin);
+      return null;
+    }
+    // Verification gate: until an admin approves the registration, the student only sees its status.
+    if (!isVerified(session.user)) {
+      if (path !== VERIFY_PATH) {
+        window.location.replace(VERIFY_PATH);
+        return null;
+      }
+      return <VerificationStatusP onLogout={handleLogout} />;
+    }
+    if (path === VERIFY_PATH) {
+      window.location.replace("/app");
+      return null;
+    }
+
     // Mandatory first-login step: nothing else in /app is reachable until the profile is complete.
     const needsSetup = !session.user.profileCompleted;
     if (needsSetup && path !== SETUP_PATH) {

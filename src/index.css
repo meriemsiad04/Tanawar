@@ -3,6 +3,11 @@
 /* Class-based dark mode: `dark:` utilities apply under <html class="dark">. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Short viewports: laptops with OS display scaling (e.g. 1920×1080 at 150% → 1280×720 CSS px,
+   ~590px tall once browser chrome and taskbar are subtracted). Tightens vertical rhythm only;
+   a 13" MacBook (1440×900, ~780px tall) never matches. */
+@custom-variant short (@media (max-height: 700px));
+
 /* TANAWAR design tokens (Figma "TANAWAR · Student app v1.1") */
 @theme {
   --font-sans: "Noto Sans", ui-sans-serif, system-ui, sans-serif;

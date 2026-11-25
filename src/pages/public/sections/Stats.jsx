@@ -11,8 +11,8 @@ const STATS = [
 /** Floating stats card — overlaps the bottom of the hero by 84px. */
 export default function Stats() {
   return (
-    <section className="relative z-10 -mt-[84px] px-6 lg:px-16">
-      <Reveal className="grid gap-6 rounded-3xl bg-surface px-9 py-[30px] shadow-raised sm:grid-cols-2 lg:grid-cols-4">
+    <section className="relative z-10 mx-auto w-full max-w-[1440px] -mt-[84px] px-6 lg:px-16">
+      <Reveal className="grid gap-6 rounded-3xl border border-transparent bg-surface px-7 py-[30px] shadow-raised sm:grid-cols-2 xl:grid-cols-4 xl:px-9 dark:border-line">
         {STATS.map((s) => (
           <StatCard key={s.label} {...s} />
         ))}
