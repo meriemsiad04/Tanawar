@@ -9,6 +9,7 @@ import SessionStatusBadge from "../../Components/sharedC/SessionStatusBadge.jsx"
 import CreateSessionModal from "../../Components/sharedC/CreateSessionModal.jsx";
 import ModuleCard from "../../Components/sharedC/ModuleCard.jsx";
 import SuggestedStudentCard from "../../Components/sharedC/SuggestedStudentCard.jsx";
+import StudyWithMePanel from "../../Components/sharedC/StudyWithMePanel.jsx";
 import { classroomPath, joinSession, leaveSession } from "../../services/sessionsService.js";
 import { useAsync } from "../../hooks/useAsync.js";
 import { getModules, getSuggestedStudents, sendFriendRequest } from "../../services/studentsService.js";
@@ -459,6 +460,8 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
               ))}
             </div>
           </Panel>
+
+          <StudyWithMePanel />
         </div>
       </div>
 

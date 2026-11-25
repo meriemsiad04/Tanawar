@@ -10,6 +10,9 @@ import ResourcesP from "./pages/Student/ResourcesP.jsx";
 import ConnectionsP from "./pages/Student/ConnectionsP.jsx";
 import SettingP from "./pages/Student/SettingP.jsx";
 import NotfP from "./pages/Student/NotfP.jsx";
+import ActivityP from "./pages/Student/ActivityP.jsx";
+import StudyRoomsP from "./pages/Student/study/StudyRoomsP.jsx";
+import StudyRoomP from "./pages/Student/study/StudyRoomP.jsx";
 import HelpP from "./pages/Student/HelpP.jsx";
 import ModulesP from "./pages/Student/ModulesP.jsx";
 import ClassroomsP from "./pages/Student/ClassroomsP.jsx";
@@ -90,6 +93,7 @@ export default function App() {
     const { fullName, field, level, avatarUrl } = session.user;
     const user = {
       fullName,
+      level,
       name: fullName?.split(" ")[0] ?? "",
       initials: initialsOf(fullName),
       avatarUrl,
@@ -105,6 +109,9 @@ export default function App() {
       : path === "/app/connections" || path === "/app/students" ? { key: "connections", node: <ConnectionsP /> }
       : path.startsWith("/app/students/") ? { key: "connections", node: <StudentProfileP key={path} studentId={decodeURIComponent(path.slice("/app/students/".length))} /> }
       : path === "/app/settings" ? { key: "settings", node: <SettingP /> }
+      : path === "/app/activity" ? { key: "activity", node: <ActivityP /> }
+      : path === "/app/study" ? { key: "study", node: <StudyRoomsP user={user} /> }
+      : path.startsWith("/app/study/") ? { key: "study", node: <StudyRoomP key={path} roomId={decodeURIComponent(path.slice("/app/study/".length))} /> }
       : path === "/app/notifications" ? { key: "notifications", node: <NotfP /> }
       : path === "/app/help" ? { key: "help", node: <HelpP /> }
       : path === "/app/modules" ? { key: "", node: <ModulesP /> }

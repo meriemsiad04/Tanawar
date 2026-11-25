@@ -9,6 +9,8 @@ const GROUPS = [
       { key: "explore", label: "Sessions", icon: "compass", href: "/app/sessions" },
       { key: "recommendations", label: "For you", icon: "spark", href: "/app/recommendations" },
       { key: "bookings", label: "My bookings", icon: "calendar", href: "/app/bookings" },
+      { key: "study", label: "Study With Me", icon: "lamp", href: "/app/study" },
+      { key: "activity", label: "Activity", icon: "activity", href: "/app/activity" },
     ],
   },
   {
