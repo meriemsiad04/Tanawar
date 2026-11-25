@@ -49,7 +49,7 @@ export async function createSession(session) {
  * Keeps the sessions matching every active filter. Empty values mean "All".
  * `query` matches the title, description, module and host name (case-insensitive).
  */
-export function filterSessions(list, { query = "", module = "", level = "", mode = "", visibility = "", availableOnly = false } = {}) {
+export function filterSessions(list, { query = "", module = "", level = "", mode = "", visibility = "", state = "", availableOnly = false } = {}, now = Date.now()) {
   const q = query.trim().toLowerCase();
   return list.filter(
     (s) =>
@@ -58,8 +58,20 @@ export function filterSessions(list, { query = "", module = "", level = "", mode
       (!level || s.level === level) &&
       (!mode || s.mode === mode) &&
       (!visibility || s.visibility === visibility) &&
+      (!state || sessionState(s, now) === state) &&
       (!availableOnly || s.seats - s.joined > 0)
   );
+}
+
+/**
+ * Where a session is in time: "live" (started, not finished), "scheduled" (starts later) or "ended".
+ * Derived from startsAt + durationMin so the list, the filter and the card badge always agree.
+ * A session without a duration counts as live for 60 minutes.
+ */
+export function sessionState({ startsAt, durationMin }, now = Date.now()) {
+  const start = new Date(startsAt).getTime();
+  if (now < start) return "scheduled";
+  return now < start + (durationMin || 60) * 60000 ? "live" : "ended";
 }
 
 /** Part of the day a session starts in: "morning" (< 12h), "afternoon" (12–17h) or "evening" (≥ 17h). */
@@ -190,6 +202,8 @@ const at = (days, h, m = 0) => {
 const AMINE = { id: "s5", name: "Amine Khelifi", rating: 4.9, verified: true, className: "bg-primary" };
 const DEMO_SESSIONS = import.meta.env.DEV
   ? [
+      // Started 20 min ago: the "Happening now" session from the dashboard (its classroom demo is "live-sql").
+      { id: "live-sql", title: "Jointures SQL et normalisation", description: "Live: jointures, formes normales et exercices corrigés.", module: "Databases", level: "L3", startsAt: new Date(Date.now() - 20 * 60000).toISOString(), durationMin: 60, seats: 15, joined: 12, mode: "online", meetingLink: "https://meet.jit.si/tanawar-live-sql", visibility: "public", host: { name: "Yacine Haddad", rating: 4.8, verified: true, className: "bg-ink-2" }, myStatus: "joined" },
       { id: "dp-bootcamp", title: "Dynamic Programming Bootcamp", description: "From memoization to tabulation: solve 6 classic exam problems together.", module: "Algorithms", level: "L2", startsAt: at(0, 18), durationMin: 90, seats: 20, joined: 14, mode: "online", meetingLink: "https://meet.google.com/", visibility: "public", host: AMINE, myStatus: "none" },
       { id: "sql-joins", title: "SQL Joins & Normalization", description: "Hands-on practice before the TD exam.", module: "Databases", level: "L3", startsAt: at(1, 14), durationMin: 60, seats: 12, joined: 12, mode: "onsite", location: "Library, Room B12", visibility: "public", host: AMINE, myStatus: "none" },
       { id: "react-hooks", title: "React Hooks Deep Dive", description: "useEffect, useMemo and custom hooks with a mini-project.", module: "Web Development", level: "L3", startsAt: at(2, 16, 30), durationMin: 120, seats: 15, joined: 6, mode: "online", meetingLink: "https://discord.gg/", visibility: "private", host: { id: "s1", name: "Sara Mebarki", rating: 4.8, verified: true, className: "bg-accent" }, myStatus: "none" },

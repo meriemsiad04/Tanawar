@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import Button from "../../../Components/uiC/Button.jsx";
 import Icon from "../../../Components/uiC/Icon.jsx";
 import Chips from "../../../Components/uiC/Chips.jsx";
+import Dropdown from "../../../Components/uiC/Dropdown.jsx";
 import { fieldShell } from "../../../Components/uiC/fieldShell.js";
 import SessionListCard from "../../../Components/sharedC/SessionListCard.jsx";
 import CreateSessionModal from "../../../Components/sharedC/CreateSessionModal.jsx";
@@ -14,12 +15,28 @@ import { createSession, filterSessions, listSessions } from "../../../services/s
 import { getModules } from "../../../services/studentsService.js";
 
 // Empty value = "All".
-const INITIAL_FILTERS = { query: "", module: "", level: "", mode: "", visibility: "", availableOnly: false };
+const INITIAL_FILTERS = { query: "", module: "", level: "", state: "", mode: "", visibility: "", availableOnly: false };
 
-// Links can pre-fill the filters: ?q= (app-bar search) and ?module= (module name or code, from the dashboard module cards).
+const STATE_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "live", label: "Live now" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "ended", label: "Ended" },
+];
+
+// Links can pre-fill the filters: ?q= (app-bar search), ?module= (module name or code, from the dashboard module cards)
+// ?state=live|scheduled|ended and ?mode=online|onsite (e.g. from the Classrooms page).
 const filtersFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
-  return { ...INITIAL_FILTERS, query: params.get("q") ?? "", module: params.get("module") ?? "" };
+  const state = params.get("state") ?? "";
+  const mode = params.get("mode") ?? "";
+  return {
+    ...INITIAL_FILTERS,
+    query: params.get("q") ?? "",
+    module: params.get("module") ?? "",
+    state: STATE_OPTIONS.some((o) => o.value === state) ? state : "",
+    mode: ["online", "onsite"].includes(mode) ? mode : "",
+  };
 };
 
 // The student's modules, only used to turn a module code from a link into its name.
@@ -40,24 +57,19 @@ const Note = ({ children }) => (
   <div className="flex flex-col items-start gap-3 rounded-[18px] border border-line bg-surface p-5 text-[13px] leading-[19px] text-fg-2">{children}</div>
 );
 
-/** Label-less dropdown for the filter bar (the first option is "All …"). */
-function FilterSelect({ label, value, onChange, options, placeholder, className = "" }) {
+/** Small uppercase caption in front of a chip group, so Status / Mode / Access are told apart. */
+const FilterGroup = ({ label, children }) => (
+  <div className="flex flex-wrap items-center gap-2.5">
+    <span aria-hidden="true" className="text-xs font-extrabold uppercase leading-4 tracking-[0.14em] text-fg-3">{label}</span>
+    {children}
+  </div>
+);
+
+/** Label-less dropdown for the filter bar; the placeholder ("All …") is the first, selectable choice. */
+function FilterSelect({ label, icon, value, onChange, options, placeholder, className = "" }) {
   return (
-    <div className={`${fieldShell()} relative h-11 ${className}`}>
-      <select
-        aria-label={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-full min-w-0 flex-1 cursor-pointer appearance-none bg-transparent pr-6 text-sm text-fg outline-none"
-      >
-        <option value="">{placeholder}</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-      <Icon name="chevronDown" size="sm" className="pointer-events-none absolute right-3 text-fg-3" />
+    <div className={`min-w-0 ${className}`}>
+      <Dropdown ariaLabel={label} icon={icon} value={value} onChange={onChange} options={options} placeholder={placeholder} emptyOption />
     </div>
   );
 }
@@ -138,14 +150,22 @@ export default function ExploreSP({ user }) {
               className="h-full min-w-0 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-fg-3"
             />
           </label>
-          <FilterSelect label="Module" placeholder="All modules" value={moduleName} onChange={setFilter("module")} options={modules} className="lg:w-[200px]" />
-          <FilterSelect label="Level" placeholder="All levels" value={filters.level} onChange={setFilter("level")} options={LEVELS} className="lg:w-[150px]" />
+          <FilterSelect label="Module" icon="books" placeholder="All modules" value={moduleName} onChange={setFilter("module")} options={modules} className="lg:w-[200px]" />
+          <FilterSelect label="Level" icon="levels" placeholder="All levels" value={filters.level} onChange={setFilter("level")} options={LEVELS} className="lg:w-[150px]" />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Chips label="Mode" value={filters.mode} options={MODE_OPTIONS} onChange={setFilter("mode")} />
-          <span aria-hidden="true" className="hidden h-6 w-px bg-line sm:block" />
-          <Chips label="Visibility" value={filters.visibility} options={VISIBILITY_OPTIONS} onChange={setFilter("visibility")} />
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <FilterGroup label="Status">
+            <Chips label="Status" value={filters.state} options={STATE_OPTIONS} onChange={setFilter("state")} />
+          </FilterGroup>
+          <span aria-hidden="true" className="hidden h-6 w-px bg-line xl:block" />
+          <FilterGroup label="Mode">
+            <Chips label="Mode" value={filters.mode} options={MODE_OPTIONS} onChange={setFilter("mode")} />
+          </FilterGroup>
+          <span aria-hidden="true" className="hidden h-6 w-px bg-line xl:block" />
+          <FilterGroup label="Access">
+            <Chips label="Visibility" value={filters.visibility} options={VISIBILITY_OPTIONS} onChange={setFilter("visibility")} />
+          </FilterGroup>
           <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-fg">
             <input
               type="checkbox"

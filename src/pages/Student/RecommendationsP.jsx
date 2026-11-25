@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import Button from "../../Components/uiC/Button.jsx";
 import Chips from "../../Components/uiC/Chips.jsx";
-import Icon from "../../Components/uiC/Icon.jsx";
 import SessionListCard from "../../Components/sharedC/SessionListCard.jsx";
 import LeaveSessionDialog from "../../Components/sharedC/LeaveSessionDialog.jsx";
 import { useAsync } from "../../hooks/useAsync.js";
@@ -81,23 +80,16 @@ export default function RecommendationsP() {
       ) : ranked.length ? (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {ranked.map((s) => (
-            <div key={s.id} className="flex flex-col gap-2">
-              <ul aria-label="Why it’s recommended" className="flex min-h-[26px] flex-wrap gap-1.5">
-                {s.reasons.map((r) => (
-                  <li key={r} className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-[5px] text-xs font-bold leading-4 text-accent-ink">
-                    <Icon name="spark" size="sm" className="!size-3.5" /> {r}
-                  </li>
-                ))}
-              </ul>
-              <SessionListCard
-                session={s}
-                busy={actions.busyId === s.id}
-                onAction={actions.onAction}
-                onCancel={actions.cancelRequest}
-                onEnter={actions.enter}
-                onLeave={actions.askLeave}
-              />
-            </div>
+            <SessionListCard
+              key={s.id}
+              session={s}
+              reasons={s.reasons}
+              busy={actions.busyId === s.id}
+              onAction={actions.onAction}
+              onCancel={actions.cancelRequest}
+              onEnter={actions.enter}
+              onLeave={actions.askLeave}
+            />
           ))}
         </div>
       ) : (

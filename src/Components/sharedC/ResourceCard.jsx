@@ -4,11 +4,12 @@ import Icon from "../uiC/Icon.jsx";
 const KIND_ICON = { pdf: "file", video: "video", link: "link", image: "image" };
 
 /**
- * Shared resource tile (Resources page): kind icon, title, module · author, open/download link.
- * `resource`: { title, kind, module, author: { name }, url }
+ * Shared resource tile (Resources page): kind icon, title, module · author, the session it was shared in, open/download link.
+ * `resource`: { title, kind, module, author: { name }, url, session?: { id, title } }
+ * `onSession(id)` (optional): makes the session name a button, e.g. to filter the page by that session.
  */
-export default function ResourceCard({ resource }) {
-  const { title, kind, module, author, url } = resource;
+export default function ResourceCard({ resource, onSession }) {
+  const { title, kind, module, author, url, session } = resource;
   const isLink = kind === "link";
   return (
     <article className="flex items-center gap-3.5 rounded-[18px] border border-line bg-surface p-4 transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0">
@@ -22,6 +23,23 @@ export default function ResourceCard({ resource }) {
         <p className="truncate text-xs leading-4 text-fg-2">
           {module} · {author.name}
         </p>
+        {session &&
+          (onSession ? (
+            <button
+              type="button"
+              onClick={() => onSession(session.id)}
+              title={`Show resources from “${session.title}”`}
+              className="mt-1 inline-flex max-w-full cursor-pointer items-center gap-1 self-start rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-bold leading-4 text-accent-ink hover:bg-accent-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <Icon name="calendar" size="sm" className="!size-3 shrink-0" />
+              <span className="truncate">{session.title}</span>
+            </button>
+          ) : (
+            <span className="mt-1 inline-flex max-w-full items-center gap-1 self-start rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-bold leading-4 text-accent-ink">
+              <Icon name="calendar" size="sm" className="!size-3 shrink-0" />
+              <span className="truncate">{session.title}</span>
+            </span>
+          ))}
       </div>
       <a
         href={url}

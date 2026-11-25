@@ -2,7 +2,7 @@ import Avatar from "../uiC/Avatar.jsx";
 import Button from "../uiC/Button.jsx";
 import Icon from "../uiC/Icon.jsx";
 import SessionStatusBadge from "./SessionStatusBadge.jsx";
-import { sessionPlace } from "../../services/sessionsService.js";
+import { sessionPlace, sessionState } from "../../services/sessionsService.js";
 import { studentPath } from "../../services/studentsService.js";
 
 const initialsOf = (n = "") => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
@@ -101,16 +101,29 @@ function CardAction({ session, busy, onAction, onCancel, onEnter, onLeave }) {
  * `session`: { title, description, module, level, startsAt, durationMin, seats, joined, mode, meetingLink, location,
  *   visibility, host: { name, rating, verified, className }, myStatus }
  * `onAction`: join (public) or request to join (private), chosen by the page. `onCancel`: withdraw a pending request. `busy` disables it while the request is in flight.
+ * `reasons` (optional, "For you" page): why the session is recommended, shown as a strip at the top of the card.
  */
-export default function SessionListCard({ session, busy = false, onAction, onCancel, onEnter, onLeave }) {
+export default function SessionListCard({ session, reasons = [], busy = false, onAction, onCancel, onEnter, onLeave }) {
   const { title, description, module, startsAt, durationMin, seats, joined, mode, visibility, host } = session;
   const left = Math.max(0, seats - joined);
   const percent = Math.min(100, Math.round((joined / seats) * 100));
   const online = mode === "online";
+  const state = sessionState(session);
 
   return (
     <article className="flex flex-col gap-4 rounded-[20px] border border-line bg-surface p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+      {reasons.length > 0 && (
+        <ul aria-label="Why it’s recommended" className="-mx-5 -mt-5 flex flex-wrap gap-1.5 rounded-t-[20px] border-b border-accent-line bg-accent-soft/60 px-5 py-3">
+          {reasons.map((r) => (
+            <li key={r} className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-[5px] text-xs font-bold leading-4 text-accent-ink">
+              <Icon name="spark" size="sm" className="!size-3.5" /> {r}
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="flex flex-wrap items-center gap-2">
+        {state === "live" && <SessionStatusBadge tone="live">Live now</SessionStatusBadge>}
+        {state === "ended" && <SessionStatusBadge tone="neutral">Ended</SessionStatusBadge>}
         <span className="rounded-lg bg-accent-soft px-2.5 py-[5px] text-xs font-bold leading-4 text-accent-ink">{module}</span>
         {online ? (
           <Tag tone="joined" icon="wifi">Online</Tag>
