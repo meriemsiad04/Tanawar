@@ -39,7 +39,7 @@ export default function Navbar({ onSignIn, onSignUp }) {
           </Button>
         )}
         <Button variant="amber" size="s" onClick={onSignIn} aria-haspopup="dialog">
-          Sign in
+          log in
         </Button>
       </div>
       </div>
