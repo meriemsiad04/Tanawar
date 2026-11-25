@@ -3,6 +3,11 @@
 /* Class-based dark mode: `dark:` utilities apply under <html class="dark">. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Short viewports: laptops with OS display scaling (e.g. 1920×1080 at 150% → 1280×720 CSS px,
+   ~590px tall once browser chrome and taskbar are subtracted). Tightens vertical rhythm only;
+   a 13" MacBook (1440×900, ~780px tall) never matches. */
+@custom-variant short (@media (max-height: 700px));
+
 /* TANAWAR design tokens (Figma "TANAWAR · Student app v1.1") */
 @theme {
   --font-sans: "Noto Sans", ui-sans-serif, system-ui, sans-serif;
@@ -41,6 +46,16 @@
   --animate-overlay-in: overlay-in 200ms ease-out both;
   --animate-dialog-in: dialog-in 260ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 
+  /* Countdown flip-clock: top flap folds down, then the bottom flap falls into place */
+  --animate-flap-top: flap-top 300ms ease-in both;
+  --animate-flap-bottom: flap-bottom 300ms 300ms ease-out both;
+
+  @keyframes flap-top {
+    to { transform: rotateX(-90deg); }
+  }
+  @keyframes flap-bottom {
+    from { transform: rotateX(90deg); }
+  }
   @keyframes overlay-in {
     from { opacity: 0; }
   }
@@ -124,8 +139,11 @@ body {
 /* Free the compositing layer once the animation is done is not needed:
    individual transform properties don't conflict with the tilt `transform`. */
 @media (prefers-reduced-motion: reduce) {
+  /* Skip the entrance animations, but keep the elements (dialogs, overlays) visible. */
   .animate-overlay-in,
-  .animate-dialog-in {
+  .animate-dialog-in,
+  .animate-flap-top,
+  .animate-flap-bottom {
     animation: none;
   }
   .reveal,
@@ -135,4 +153,33 @@ body {
     scale: none;
     transition: none;
   }
+}
+
+/* ---- Appearance settings (applied by src/services/appearance.js and the script in index.html) ---- */
+/* Font size: zoom scales px and rem values alike (most text sizes here are px). */
+:root[data-font-size="small"] {
+  zoom: 0.9;
+}
+:root[data-font-size="large"] {
+  zoom: 1.125;
+}
+
+/* "Reduce animations": same effect as the OS setting, for students who only want it in TANAWAR. */
+:root[data-reduce-motion] {
+  scroll-behavior: auto;
+}
+:root[data-reduce-motion] *,
+:root[data-reduce-motion] *::before,
+:root[data-reduce-motion] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0ms !important;
+}
+:root[data-reduce-motion] .reveal,
+:root[data-reduce-motion] .reveal-scale {
+  opacity: 1;
+  translate: none;
+  scale: none;
 }

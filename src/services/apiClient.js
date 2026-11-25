@@ -20,7 +20,16 @@ export class ApiError extends Error {
 
 export const isApiConfigured = () => Boolean(BASE_URL);
 
-export async function apiRequest(path, { method = "GET", body, token, signal } = {}) {
+/**
+ * Fired on `window` when the server refuses a request because the student's registration isn't approved
+ * (403 + code VERIFICATION_PENDING | VERIFICATION_REJECTED). authService listens and syncs the session,
+ * so the verification status stays consistent everywhere without each page handling it.
+ */
+export const VERIFICATION_EVENT = "tanawar:verification-required";
+const VERIFICATION_CODES = { VERIFICATION_PENDING: "pending", VERIFICATION_REJECTED: "rejected" };
+
+/** `responseType: "blob"` returns the raw body (used for protected files such as verification documents). */
+export async function apiRequest(path, { method = "GET", body, token, signal, responseType = "json" } = {}) {
   if (!BASE_URL) {
     throw new ApiError("The sign-in service isn't connected yet. Please try again later.", {
       code: "NOT_CONFIGURED",
@@ -31,16 +40,18 @@ export async function apiRequest(path, { method = "GET", body, token, signal } =
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   signal?.addEventListener("abort", () => controller.abort(), { once: true });
 
+  const isForm = typeof FormData !== "undefined" && body instanceof FormData; // multipart: browser sets the boundary header
+
   let res;
   try {
     res = await fetch(`${BASE_URL}${path}`, {
       method,
       headers: {
         Accept: "application/json",
-        ...(body !== undefined && { "Content-Type": "application/json" }),
+        ...(body !== undefined && !isForm && { "Content-Type": "application/json" }),
         ...(token && { Authorization: `Bearer ${token}` }),
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
       signal: controller.signal,
     });
   } catch {
@@ -54,8 +65,17 @@ export async function apiRequest(path, { method = "GET", body, token, signal } =
     clearTimeout(timer);
   }
 
+  if (res.ok && responseType === "blob") return res.blob();
+
   const data = await res.json().catch(() => null);
   if (!res.ok) {
+    if (res.status === 403 && VERIFICATION_CODES[data?.code] && typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent(VERIFICATION_EVENT, {
+          detail: { status: VERIFICATION_CODES[data.code], rejectionReason: data?.rejectionReason ?? null },
+        })
+      );
+    }
     throw new ApiError(data?.message || `Request failed (${res.status}).`, {
       status: res.status,
       code: data?.code || "HTTP_ERROR",

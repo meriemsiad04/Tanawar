@@ -27,14 +27,14 @@ const STEPS = [
 
 export default function How() {
   return (
-    <section id="how" className="flex scroll-mt-4 flex-col gap-12 px-6 pt-24 lg:px-16">
+    <section id="how" className="mx-auto w-full max-w-[1440px] flex scroll-mt-4 flex-col gap-12 px-6 pt-24 lg:px-16">
       <Reveal>
         <SectionTitle eyebrow="How it works">
           From “I don’t get it” to “I got it” in one session
         </SectionTitle>
       </Reveal>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {STEPS.map(({ icon, title, text }, i) => (
           <Reveal key={title} delay={150 + i * 150} className="[&>*]:h-full">
             <StepCard icon={icon} number={String(i + 1).padStart(2, "0")} title={title}>

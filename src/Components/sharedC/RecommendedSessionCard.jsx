@@ -4,11 +4,11 @@ import Icon from "../uiC/Icon.jsx";
 import SessionStatusBadge from "./SessionStatusBadge.jsx";
 
 /**
- * Recommendation card. `action`: "join" (public) | "request" (private) | "full" (disabled).
+ * Recommendation card. When `joined` (public session), the footer shows Enter classroom + Leave. `action`: "join" (public) | "request" (private) | "full" (disabled).
  * `session`: { module, status, statusTone, reason, title, host:{initials,name,rating,className},
  *   when, where, whereIcon, booked, capacity, access }
  */
-export default function RecommendedSessionCard({ session, onAction }) {
+export default function RecommendedSessionCard({ session, joined = false, requested = false, onAction, onEnter, onLeave }) {
   const { module, status, statusTone, reason, title, host, when, where, whereIcon = "pin", booked, capacity, access } = session;
   const left = capacity - booked;
   const full = left <= 0;
@@ -66,9 +66,22 @@ export default function RecommendedSessionCard({ session, onAction }) {
 
       <div className="mt-auto flex items-center justify-between border-t border-line pt-3.5">
         <SessionStatusBadge tone={access === "Private" ? "neutral" : "clay"}>{access}</SessionStatusBadge>
-        {full ? (
+        {joined ? (
+          <div className="flex items-center gap-1">
+            <Button size="s" onClick={() => onEnter?.(session)}>
+              Enter classroom
+            </Button>
+            <button type="button" onClick={() => onLeave?.(session)} className="h-[38px] cursor-pointer rounded-[10px] px-3 text-sm font-bold text-fg-2 hover:text-fg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30">
+              Leave
+            </button>
+          </div>
+        ) : full ? (
           <Button size="s" variant="outline" disabled className="disabled:opacity-45">
             Full
+          </Button>
+        ) : access === "Private" && requested ? (
+          <Button size="s" variant="outline" disabled className="disabled:opacity-70">
+            Pending
           </Button>
         ) : access === "Private" ? (
           <Button size="s" variant="secondary" onClick={() => onAction?.(session)}>

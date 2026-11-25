@@ -1,11 +1,12 @@
 import { useEffect, useRef } from "react";
+import { prefersReducedMotion } from "../services/appearance.js";
 
 /**
  * 3D tilt that follows the cursor.
  * - `containerRef`: element that listens for the pointer (stays still).
  * - `targetRef`: element that gets rotated (and receives --tilt-sx / --tilt-sy
  *   CSS variables so children can build a dynamic shadow).
- * Disabled for touch/pen pointers and when prefers-reduced-motion is set.
+ * Disabled for touch/pen pointers and when reduced motion is on (OS setting or TANAWAR setting).
  * Mutates styles directly, so it never triggers React re-renders.
  */
 export default function useTilt({ max = 6, perspective = 1000, shadow = 14 } = {}) {
@@ -17,7 +18,6 @@ export default function useTilt({ max = 6, perspective = 1000, shadow = 14 } = {
     const target = targetRef.current;
     if (!container || !target) return undefined;
 
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
 
     const apply = (rx, ry, sx, sy, duration) => {
@@ -28,7 +28,7 @@ export default function useTilt({ max = 6, perspective = 1000, shadow = 14 } = {
     };
 
     const onMove = (e) => {
-      if (e.pointerType !== "mouse" || reduce.matches) return;
+      if (e.pointerType !== "mouse" || prefersReducedMotion()) return;
       const { clientX, clientY } = e;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
