@@ -5,7 +5,7 @@ import { getSession, updateSessionUser } from "./authService.js";
  * Student profile: the only place the frontend talks to the profile endpoints.
  *
  * Expected backend contract (Bearer token; adjust here when the API is built):
- *   GET /students/me/profile        → { fullName, major, level, yearsAtUniversity, avatarUrl, birthdate, bio, strongModules[], memberSince }
+ *   GET /students/me/profile        → { fullName, major, level, avatarUrl, birthdate, bio, strongModules[], memberSince }
  *   PUT /students/me/profile        body: same fields (avatarUrl: data URL | null | unchanged URL) → saved profile
  *   GET /students/me/rating         → { average: number, count: number, reviews: [{ id, rating, comment, author, createdAt }] }
  *   GET /students/me/hosted-sessions→ [{ id, title, module, level, startsAt, durationMin, mode, location, seats, booked, status }]
@@ -22,14 +22,13 @@ const sessionPatch = (p) => ({
   fullName: p.fullName,
   field: p.major,
   level: p.level,
-  yearsAtUniversity: p.yearsAtUniversity,
   avatarUrl: p.avatarUrl || null,
   profileCompleted: true,
 });
 
 export const profileFromSession = () => {
   const u = getSession()?.user ?? {};
-  return { fullName: u.fullName ?? "", major: u.field ?? "", level: u.level ?? "", yearsAtUniversity: u.yearsAtUniversity ?? "", avatarUrl: u.avatarUrl ?? null, birthdate: "", bio: "", strongModules: [] };
+  return { fullName: u.fullName ?? "", major: u.field ?? "", level: u.level ?? "", avatarUrl: u.avatarUrl ?? null, birthdate: "", bio: "", strongModules: [] };
 };
 
 const call = (path, opts) => apiRequest(path, { token: token(), ...opts });
@@ -88,7 +87,6 @@ function demoAttendance(from) {
    Dead code in production builds; remove with the demo account. */
 const DEMO_PROFILE = import.meta.env.DEV
   ? {
-      yearsAtUniversity: 3,
       birthdate: "2004-03-17",
       bio: "L3 Informatique student at UMBB. I love databases and clean code, and I host weekly SQL sessions before exams.\nAlways happy to help with Génie logiciel and UML too.",
       strongModules: ["Bases de données", "Génie logiciel", "Systèmes d’exploitation", "Algorithmique"],

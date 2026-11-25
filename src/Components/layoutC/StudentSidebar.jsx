@@ -8,7 +8,9 @@ const GROUPS = [
       { key: "dashboard", label: "Dashboard", icon: "home", href: "/app" },
       { key: "explore", label: "Sessions", icon: "compass", href: "/app/sessions" },
       { key: "recommendations", label: "For you", icon: "spark", href: "/app/recommendations" },
-      { key: "bookings", label: "My bookings", icon: "calendar", href: "/app/bookings", count: 2 },
+      { key: "bookings", label: "My bookings", icon: "calendar", href: "/app/bookings" },
+      { key: "study", label: "Study With Me", icon: "lamp", href: "/app/study" },
+      { key: "activity", label: "Activity", icon: "activity", href: "/app/activity" },
     ],
   },
   {
@@ -17,6 +19,8 @@ const GROUPS = [
       { key: "resources", label: "Resources", icon: "books", href: "/app/resources" },
       { key: "connections", label: "Connections", icon: "users", href: "/app/connections" },
       {key:"classrooms", label:"Classrooms", icon:"video", href:"/app/classrooms"},
+      // Unread count shares the bell's store (useNavCounts → useNotifications), so both update together. Red like the bell.
+      { key: "notifications", label: "Notifications", icon: "bell", href: "/app/notifications", alert: true },
       { key: "profile", label: "Profile", icon: "user", href: "/app/profile" },
     ],
   },
@@ -30,12 +34,12 @@ const GROUPS = [
 ];
 
 /**
- * Student navigation rail (ink background). `active` is the item key.
+ * Student navigation rail (ink background). `active` is the item key; `counts` maps item keys to badge numbers.
  * One fixed width (240px) on every laptop/desktop so the main column always gets the rest;
  * only below lg (tablets) it collapses to an icon rail, with labels kept as tooltips and for screen readers.
  * The links scroll on their own so the account card (log out) stays visible on short screens.
  */
-export default function StudentSidebar({ active = "dashboard", user, onLogout }) {
+export default function StudentSidebar({ active = "dashboard", user, onLogout, counts = {} }) {
   return (
     <aside className="sticky top-0 flex h-screen w-[76px] shrink-0 flex-col gap-4 bg-ink px-3 py-5 short:gap-3 short:py-4 lg:w-60 lg:px-4">
       <a href="/app" aria-label="TANAWAR home" className="flex shrink-0 justify-center pt-1 lg:justify-start lg:pl-2">
@@ -52,7 +56,8 @@ export default function StudentSidebar({ active = "dashboard", user, onLogout })
             <p className="hidden pb-1.5 pl-2.5 pt-3.5 text-xs font-extrabold uppercase leading-4 tracking-[0.14em] text-[#a9a3f0] short:pb-1 short:pt-2 lg:block">
               {group.label}
             </p>
-            {group.items.map(({ key, label, icon, href, count }) => {
+            {group.items.map(({ key, label, icon, href, alert }) => {
+              const count = counts[key];
               const isActive = key === active;
               return (
                 <a
@@ -69,8 +74,13 @@ export default function StudentSidebar({ active = "dashboard", user, onLogout })
                   <Icon name={icon} />
                   <span className="sr-only lg:not-sr-only lg:min-w-0 lg:flex-1 lg:truncate">{label}</span>
                   {count ? (
-                    <span className="absolute right-1 top-1 rounded-full bg-highlight px-[5px] text-[10px] font-bold leading-4 text-[#2a2000] lg:static lg:px-[7px] lg:py-0.5 lg:text-xs">
-                      {count}
+                    <span
+                      className={`absolute right-1 top-1 rounded-full px-[5px] text-[10px] font-bold leading-4 lg:static lg:px-[7px] lg:py-0.5 lg:text-xs ${
+                        alert ? "bg-live text-white" : "bg-highlight text-[#2a2000]"
+                      }`}
+                    >
+                      {alert && count > 9 ? "9+" : count}
+                      {alert && <span className="sr-only"> unread</span>}
                     </span>
                   ) : null}
                 </a>

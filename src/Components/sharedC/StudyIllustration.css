@@ -1,0 +1,129 @@
+/* Study With Me illustrations: scene colours that follow the theme, and quiet looping motion. */
+.study-art {
+  --desk: #e7dccb;
+  --desk-2: #d5c6ae;
+  --paper: #fffdf7;
+  --paper-2: #efe9dc;
+  --device: #c9cbe0;
+  --device-2: #aeb1cc;
+  --ink-line: #2a2440;
+  --plant: #4f9d76;
+  --glow: rgb(255 184 0 / 0.28);
+  overflow: visible;
+}
+:root.dark .study-art {
+  --desk: #3a3478;
+  --desk-2: #2c2760;
+  --paper: #f1efff;
+  --paper-2: #d6d2f5;
+  --device: #5b55a5;
+  --device-2: #47418c;
+  --plant: #5fb68a;
+  --glow: rgb(255 184 0 / 0.22);
+}
+
+/* Away (left the room): the desk stays, the colour fades. */
+.study-art[data-away="true"] {
+  filter: grayscale(0.9);
+  opacity: 0.55;
+}
+
+.study-art .breathe {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: study-breathe 4.8s ease-in-out infinite;
+}
+.study-art .page {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+  animation: study-page 9s ease-in-out infinite;
+}
+.study-art .scribble {
+  animation: study-scribble 1.6s ease-in-out infinite;
+}
+.study-art .steam {
+  animation: study-steam 3.2s ease-in-out infinite;
+}
+.study-art .steam-2 {
+  animation-delay: 1.6s;
+}
+.study-art .note {
+  animation: study-note 4s ease-in-out infinite;
+}
+.study-art .note-2 {
+  animation-delay: 2s;
+}
+.study-art .dot {
+  animation: study-dot 2.4s ease-in-out infinite;
+}
+.study-art .dot-2 {
+  animation-delay: 0.3s;
+}
+.study-art .dot-3 {
+  animation-delay: 0.6s;
+}
+.study-art .screen-glow {
+  animation: study-glow 5s ease-in-out infinite;
+}
+.study-art .lamp-light {
+  animation: study-glow 7s ease-in-out infinite;
+}
+.study-art[data-away="true"] * {
+  animation: none !important;
+}
+
+@keyframes study-breathe {
+  50% { transform: translateY(0.8px) scaleY(0.99); }
+}
+@keyframes study-page {
+  0%, 70% { transform: scaleX(1); }
+  82%, 100% { transform: scaleX(-1); opacity: 0; }
+}
+@keyframes study-scribble {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(2px, -0.6px); }
+  50% { transform: translate(4px, 0); }
+  75% { transform: translate(2px, 0.6px); }
+}
+@keyframes study-steam {
+  0% { opacity: 0; transform: translateY(4px); }
+  40% { opacity: 0.7; }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes study-note {
+  0% { opacity: 0; transform: translate(0, 4px); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translate(6px, -12px); }
+}
+@keyframes study-dot {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+@keyframes study-glow {
+  50% { opacity: 0.65; }
+}
+
+/* A new desk being taken. */
+.seat-in {
+  animation: seat-in 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes seat-in {
+  from { opacity: 0; translate: 0 14px; scale: 0.96; }
+}
+
+/* Live dot pulse. */
+.live-pulse {
+  animation: live-pulse 2s ease-out infinite;
+}
+@keyframes live-pulse {
+  0% { box-shadow: 0 0 0 0 rgb(47 163 122 / 0.55); }
+  100% { box-shadow: 0 0 0 8px rgb(47 163 122 / 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .study-art *,
+  .seat-in,
+  .live-pulse {
+    animation: none !important;
+  }
+}

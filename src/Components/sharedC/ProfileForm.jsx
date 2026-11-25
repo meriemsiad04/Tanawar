@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Avatar from "../uiC/Avatar.jsx";
 import Button from "../uiC/Button.jsx";
 import Icon from "../uiC/Icon.jsx";
@@ -17,10 +17,6 @@ function validate(v) {
   else if (v.fullName.trim().length > LIMITS.name) e.fullName = `At most ${LIMITS.name} characters.`;
   if (!v.major) e.major = "Choose your major.";
   if (!v.level) e.level = "Choose your study level.";
-  const years = Number(v.yearsAtUniversity);
-  if (v.yearsAtUniversity === "") e.yearsAtUniversity = "Enter your years at university.";
-  else if (!Number.isInteger(years) || years < LIMITS.years.min || years > LIMITS.years.max)
-    e.yearsAtUniversity = `Between ${LIMITS.years.min} and ${LIMITS.years.max} years.`;
   if (v.birthdate) {
     const b = new Date(`${v.birthdate}T00:00:00`);
     const age = (Date.now() - b.getTime()) / (365.25 * 24 * 3600 * 1000);
@@ -52,21 +48,26 @@ function toAvatarDataUrl(file) {
 
 /**
  * Student profile form, shared by first-login setup and profile editing.
- * Props: initial (profile fields), submitLabel, onSubmit(profile) → Promise (throw to show an error), onCancel? (edit mode).
+ * Props: initial (profile fields), submitLabel, onSubmit(profile) → Promise (throw to show an error), onCancel? (edit mode),
+ *   onDirtyChange?(dirty) (Settings page: highlights unsaved edits and warns before leaving).
  */
-export default function ProfileForm({ initial, submitLabel, onSubmit, onCancel }) {
+export default function ProfileForm({ initial, submitLabel, onSubmit, onCancel, onDirtyChange }) {
   const fileRef = useRef(null);
   const bioId = useId();
-  const [values, setValues] = useState(() => ({
+  const [start] = useState(() => ({
     fullName: initial.fullName ?? "",
     major: initial.major ?? "",
     level: initial.level ?? "",
-    yearsAtUniversity: initial.yearsAtUniversity === undefined || initial.yearsAtUniversity === null ? "" : String(initial.yearsAtUniversity),
     birthdate: initial.birthdate ?? "",
     bio: initial.bio ?? "",
     strongModules: initial.strongModules ?? [],
     avatarUrl: initial.avatarUrl ?? null,
   }));
+  const [values, setValues] = useState(start);
+  const dirty = useMemo(() => JSON.stringify(values) !== JSON.stringify(start), [values, start]);
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -114,7 +115,6 @@ export default function ProfileForm({ initial, submitLabel, onSubmit, onCancel }
         fullName: values.fullName.trim(),
         major: values.major,
         level: values.level,
-        yearsAtUniversity: Number(values.yearsAtUniversity),
         birthdate: values.birthdate || null,
         bio: values.bio.trim(),
         strongModules: values.strongModules,
@@ -153,7 +153,6 @@ export default function ProfileForm({ initial, submitLabel, onSubmit, onCancel }
       <div className="grid gap-4 sm:grid-cols-2">
         <Select label="Major" required icon="cap" value={values.major} onChange={set("major")} onBlur={blur("major")} options={MAJORS.includes(values.major) || !values.major ? MAJORS : [values.major, ...MAJORS]} placeholder="Select your major" error={show("major")} />
         <Select label="Study level" required icon="levels" value={values.level} onChange={set("level")} onBlur={blur("level")} options={LEVELS} placeholder="Select your level" error={show("level")} />
-        <Input label={<>Years at university<Req /></>} icon="clock" type="number" inputMode="numeric" min={LIMITS.years.min} max={LIMITS.years.max} value={values.yearsAtUniversity} onChange={set("yearsAtUniversity")} onBlur={blur("yearsAtUniversity")} error={show("yearsAtUniversity")} />
         <Input label={<>Birthdate <span className="font-normal text-fg-3">(optional)</span></>} icon="calendar" type="date" max={today} value={values.birthdate} onChange={set("birthdate")} onBlur={blur("birthdate")} error={show("birthdate")} />
       </div>
 

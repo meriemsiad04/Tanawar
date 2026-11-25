@@ -11,9 +11,18 @@ const GAP = 3;
 
 /**
  * GitHub-style contribution heatmap: one cell per day, columns are weeks (Sun→Sat), ending this week.
- * `data`: [{ date: "YYYY-MM-DD", count }] — sessions attended that day.
+ * `data`: [{ date: "YYYY-MM-DD", count }] — sessions attended that day (or any activity count, see the wording props).
+ * Wording (defaults keep the profile pages unchanged): `unit` / `unitPlural` name what is counted,
+ * `summary` ends the caption, `describe(cell)` optionally replaces a cell's tooltip text ({ key, date, count }).
  */
-export default function ContributionHeatmap({ data = [], weeks = 53 }) {
+export default function ContributionHeatmap({
+  data = [],
+  weeks = 53,
+  unit = "session",
+  unitPlural = "sessions",
+  summary = "attended in the last year",
+  describe,
+}) {
   const scroller = useRef(null);
   const [today] = useState(() => new Date());
   const { columns, months, total } = useMemo(() => {
@@ -54,7 +63,7 @@ export default function ContributionHeatmap({ data = [], weeks = 53 }) {
   return (
     <figure className="flex flex-col gap-3">
       <figcaption className="text-sm text-fg-2">
-        <strong className="font-extrabold text-fg">{total}</strong> {total === 1 ? "session" : "sessions"} attended in the last year
+        <strong className="font-extrabold text-fg">{total}</strong> {total === 1 ? unit : unitPlural} {summary}
       </figcaption>
 
       <div ref={scroller} className="overflow-x-auto pb-1">
@@ -70,14 +79,17 @@ export default function ContributionHeatmap({ data = [], weeks = 53 }) {
                 <span key={w} className="absolute" style={{ left: w * (CELL + GAP) }}>{label}</span>
               ))}
             </div>
-            <div role="img" aria-label={`${total} sessions attended in the last year`} className="flex" style={{ gap: GAP }}>
+            <div role="img" aria-label={`${total} ${total === 1 ? unit : unitPlural} ${summary}`} className="flex" style={{ gap: GAP }}>
               {columns.map((col, w) => (
                 <div key={w} className="flex flex-col" style={{ gap: GAP }}>
                   {col.map((cell, d) =>
                     cell ? (
                       <span
                         key={cell.key}
-                        title={`${cell.count} ${cell.count === 1 ? "session" : "sessions"} · ${cell.date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}`}
+                        title={
+                          describe?.(cell) ??
+                          `${cell.count} ${cell.count === 1 ? unit : unitPlural} · ${cell.date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}`
+                        }
                         className={`rounded-[3px] ${LEVEL_CLASS[levelOf(cell.count)]}`}
                         style={{ width: CELL, height: CELL }}
                       />

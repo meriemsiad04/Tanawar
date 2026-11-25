@@ -1,6 +1,6 @@
 import { useId } from "react";
 import Icon from "./Icon.jsx";
-import { fieldShell } from "./fieldShell.js";
+import Dropdown from "./Dropdown.jsx";
 
 // Shared form pieces (extracted from CreateSessionModal): required mark, field error, field shell, select, counter.
 // Displays the required-field asterisk.
@@ -16,7 +16,8 @@ export function FieldError({ id, children }) {
     </p>
   );
 }
-// Reusable dropdown component with label, icon, options and error handling.
+// Labelled form dropdown (label, icon, options, error). Renders the styled TANAWAR Dropdown instead of a native <select>.
+// `onChange` still receives an event-like `{ target: { value } }`, so existing `set(field)` handlers keep working.
 
 export default function Select({ label, icon, value, onChange, onBlur, options, placeholder, error, required, disabled }) {
   const id = useId();
@@ -26,27 +27,18 @@ export default function Select({ label, icon, value, onChange, onBlur, options, 
         {label}
         {required && <Req />}
       </label>
-      <div className={`${fieldShell(error)} relative h-11`}>
-        <Icon name={icon} size="sm" className="text-fg-3 group-focus-within:text-primary-text" />
-        <select
-          id={id}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
-          disabled={disabled}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? `${id}-error` : undefined}
-          className={`h-full min-w-0 flex-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 appearance-none bg-transparent pr-6 text-sm outline-none ${value ? "text-fg" : "text-fg-3"}`}
-        >
-          <option value="">{placeholder}</option>
-          {options.map((o) => (
-            <option key={o} value={o} className="text-fg">
-              {o}
-            </option>
-          ))}
-        </select>
-        <Icon name="chevronDown" size="sm" className="pointer-events-none absolute right-3 text-fg-3" />
-      </div>
+      <Dropdown
+        id={id}
+        icon={icon}
+        value={value}
+        options={options}
+        placeholder={placeholder}
+        error={error}
+        disabled={disabled}
+        ariaDescribedBy={error ? `${id}-error` : undefined}
+        onChange={(next) => onChange?.({ target: { value: next } })}
+        onBlur={onBlur}
+      />
       <FieldError id={`${id}-error`}>{error}</FieldError>
     </div>
   );

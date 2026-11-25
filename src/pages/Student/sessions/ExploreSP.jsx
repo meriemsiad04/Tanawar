@@ -2,23 +2,45 @@
 import { useMemo, useState } from "react";
 import Button from "../../../Components/uiC/Button.jsx";
 import Icon from "../../../Components/uiC/Icon.jsx";
+import Chips from "../../../Components/uiC/Chips.jsx";
+import Dropdown from "../../../Components/uiC/Dropdown.jsx";
 import { fieldShell } from "../../../Components/uiC/fieldShell.js";
 import SessionListCard from "../../../Components/sharedC/SessionListCard.jsx";
 import CreateSessionModal from "../../../Components/sharedC/CreateSessionModal.jsx";
-import ConfirmDialog from "../../../Components/sharedC/ConfirmDialog.jsx";
+import LeaveSessionDialog from "../../../Components/sharedC/LeaveSessionDialog.jsx";
 import { useAsync } from "../../../hooks/useAsync.js";
+import { useSessionActions } from "../../../hooks/useSessionActions.js";
 import { LEVELS } from "../../../data/sessionOptions.js";
-import {
-  classroomPath,
-  filterSessions,
-  joinSession,
-  leaveSession,
-  listSessions,
-  requestToJoin,
-} from "../../../services/sessionsService.js";
+import { createSession, filterSessions, listSessions } from "../../../services/sessionsService.js";
+import { getModules } from "../../../services/studentsService.js";
 
 // Empty value = "All".
-const INITIAL_FILTERS = { query: "", module: "", level: "", mode: "", visibility: "", availableOnly: false };
+const INITIAL_FILTERS = { query: "", module: "", level: "", state: "", mode: "", visibility: "", availableOnly: false };
+
+const STATE_OPTIONS = [
+  { value: "", label: "All" },
+  { value: "live", label: "Live now" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "ended", label: "Ended" },
+];
+
+// Links can pre-fill the filters: ?q= (app-bar search), ?module= (module name or code, from the dashboard module cards)
+// ?state=live|scheduled|ended and ?mode=online|onsite (e.g. from the Classrooms page).
+const filtersFromUrl = () => {
+  const params = new URLSearchParams(window.location.search);
+  const state = params.get("state") ?? "";
+  const mode = params.get("mode") ?? "";
+  return {
+    ...INITIAL_FILTERS,
+    query: params.get("q") ?? "",
+    module: params.get("module") ?? "",
+    state: STATE_OPTIONS.some((o) => o.value === state) ? state : "",
+    mode: ["online", "onsite"].includes(mode) ? mode : "",
+  };
+};
+
+// The student's modules, only used to turn a module code from a link into its name.
+const loadModules = () => getModules().catch(() => []);
 
 const MODE_OPTIONS = [
   { value: "", label: "All" },
@@ -35,48 +57,19 @@ const Note = ({ children }) => (
   <div className="flex flex-col items-start gap-3 rounded-[18px] border border-line bg-surface p-5 text-[13px] leading-[19px] text-fg-2">{children}</div>
 );
 
-/** Pill toggle group (one choice). */
-function Chips({ label, value, options, onChange }) {
-  return (
-    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-2">
-      {options.map((o) => {
-        const active = o.value === value;
-        return (
-          <button
-            key={o.value || "all"}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onChange(o.value)}
-            className={`h-9 cursor-pointer rounded-full px-4 text-[13px] font-bold leading-none transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 ${
-              active ? "bg-primary text-white" : "border border-line-strong bg-surface text-fg-2 hover:bg-surface-2 hover:text-fg"
-            }`}
-          >
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+/** Small uppercase caption in front of a chip group, so Status / Mode / Access are told apart. */
+const FilterGroup = ({ label, children }) => (
+  <div className="flex flex-wrap items-center gap-2.5">
+    <span aria-hidden="true" className="text-xs font-extrabold uppercase leading-4 tracking-[0.14em] text-fg-3">{label}</span>
+    {children}
+  </div>
+);
 
-/** Label-less dropdown for the filter bar (the first option is "All …"). */
-function FilterSelect({ label, value, onChange, options, placeholder, className = "" }) {
+/** Label-less dropdown for the filter bar; the placeholder ("All …") is the first, selectable choice. */
+function FilterSelect({ label, icon, value, onChange, options, placeholder, className = "" }) {
   return (
-    <div className={`${fieldShell()} relative h-11 ${className}`}>
-      <select
-        aria-label={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-full min-w-0 flex-1 cursor-pointer appearance-none bg-transparent pr-6 text-sm text-fg outline-none"
-      >
-        <option value="">{placeholder}</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-      <Icon name="chevronDown" size="sm" className="pointer-events-none absolute right-3 text-fg-3" />
+    <div className={`min-w-0 ${className}`}>
+      <Dropdown ariaLabel={label} icon={icon} value={value} onChange={onChange} options={options} placeholder={placeholder} emptyOption />
     </div>
   );
 }
@@ -84,74 +77,35 @@ function FilterSelect({ label, value, onChange, options, placeholder, className 
 /** Sessions page: browse, filter, join / request / leave sessions, create one. */
 export default function ExploreSP({ user }) {
   const { status, data, reload } = useAsync(listSessions);
-  const [filters, setFilters] = useState(INITIAL_FILTERS);
-  const [overrides, setOverrides] = useState({}); // session id → { myStatus, joined } changed on this page
+  const actions = useSessionActions();
+  const { apply } = actions;
+  const myModules = useAsync(loadModules);
+  const [filters, setFilters] = useState(filtersFromUrl);
   const [mine, setMine] = useState([]); // sessions created from this page
-  const [busyId, setBusyId] = useState(null);
-  const [leaving, setLeaving] = useState(null); // session waiting for the Leave confirmation
-  const [actionError, setActionError] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [created, setCreated] = useState(null);
+  const [createError, setCreateError] = useState("");
 
-  const sessions = useMemo(
-    () => [...mine, ...(data ?? [])].map((s) => (overrides[s.id] ? { ...s, ...overrides[s.id] } : s)),
-    [mine, data, overrides]
+  const sessions = useMemo(() => apply([...mine, ...(data ?? [])]), [apply, mine, data]);
+  // A module code (INF301) from a link is matched by its name (Algorithms).
+  const moduleName = useMemo(
+    () => (myModules.data ?? []).find((m) => m.code === filters.module)?.name ?? filters.module,
+    [myModules.data, filters.module]
   );
-  const shown = useMemo(() => filterSessions(sessions, filters), [sessions, filters]);
+  const shown = useMemo(() => filterSessions(sessions, { ...filters, module: moduleName }), [sessions, filters, moduleName]);
   const modules = useMemo(() => [...new Set(sessions.map((s) => s.module))].sort((a, b) => a.localeCompare(b)), [sessions]);
   const filtered = Object.keys(INITIAL_FILTERS).some((k) => filters[k] !== INITIAL_FILTERS[k]);
 
   const setFilter = (key) => (value) => setFilters((f) => ({ ...f, [key]: value }));
-  const update = (id, patch) => setOverrides((o) => ({ ...o, [id]: { ...o[id], ...patch } }));
-
-  /** Runs a join / request / leave call for one card, then applies `patch` to it. Returns true on success. */
-  const run = async (session, action, patch, failMessage) => {
-    setActionError("");
-    setBusyId(session.id);
+  const addCreated = async (session) => {
+    setCreateError("");
     try {
-      await action(session.id);
-      update(session.id, patch);
-      return true;
+      const item = await createSession(session);
+      setMine((list) => [item, ...list]);
+      setCreated(session);
     } catch {
-      setActionError(failMessage);
-      return false;
-    } finally {
-      setBusyId(null);
+      setCreateError("Couldn’t publish the session. Please try again.");
     }
-  };
-
-  const join = (s) => run(s, joinSession, { myStatus: "joined", joined: s.joined + 1 }, "Couldn’t join the session. Please try again.");
-  const request = (s) => run(s, requestToJoin, { myStatus: "pending" }, "Couldn’t send your join request. Please try again.");
-  const confirmLeave = async () => {
-    const s = leaving;
-    await run(s, leaveSession, { myStatus: "none", joined: Math.max(0, s.joined - 1) }, "Couldn’t leave the session. Please try again.");
-    setLeaving(null);
-  };
-  const enter = ({ id }) => window.location.assign(classroomPath(id));
-
-  const addCreated = (session) => {
-    // TODO: POST the session to the API (resources as multipart) once the backend exists.
-    setMine((list) => [
-      {
-        id: crypto.randomUUID(),
-        title: session.title,
-        description: session.description,
-        module: session.module,
-        level: session.level,
-        startsAt: session.startsAt,
-        durationMin: session.duration,
-        seats: session.seats,
-        joined: 0,
-        mode: session.mode,
-        meetingLink: session.meetingLink,
-        location: session.location,
-        visibility: session.visibility,
-        host: { name: user?.fullName ?? "You", rating: null, verified: true },
-        myStatus: "host",
-      },
-      ...list,
-    ]);
-    setCreated(session);
     setCreateOpen(false);
   };
 
@@ -196,14 +150,22 @@ export default function ExploreSP({ user }) {
               className="h-full min-w-0 flex-1 bg-transparent text-sm text-fg outline-none placeholder:text-fg-3"
             />
           </label>
-          <FilterSelect label="Module" placeholder="All modules" value={filters.module} onChange={setFilter("module")} options={modules} className="lg:w-[200px]" />
-          <FilterSelect label="Level" placeholder="All levels" value={filters.level} onChange={setFilter("level")} options={LEVELS} className="lg:w-[150px]" />
+          <FilterSelect label="Module" icon="books" placeholder="All modules" value={moduleName} onChange={setFilter("module")} options={modules} className="lg:w-[200px]" />
+          <FilterSelect label="Level" icon="levels" placeholder="All levels" value={filters.level} onChange={setFilter("level")} options={LEVELS} className="lg:w-[150px]" />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Chips label="Mode" value={filters.mode} options={MODE_OPTIONS} onChange={setFilter("mode")} />
-          <span aria-hidden="true" className="hidden h-6 w-px bg-line sm:block" />
-          <Chips label="Visibility" value={filters.visibility} options={VISIBILITY_OPTIONS} onChange={setFilter("visibility")} />
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <FilterGroup label="Status">
+            <Chips label="Status" value={filters.state} options={STATE_OPTIONS} onChange={setFilter("state")} />
+          </FilterGroup>
+          <span aria-hidden="true" className="hidden h-6 w-px bg-line xl:block" />
+          <FilterGroup label="Mode">
+            <Chips label="Mode" value={filters.mode} options={MODE_OPTIONS} onChange={setFilter("mode")} />
+          </FilterGroup>
+          <span aria-hidden="true" className="hidden h-6 w-px bg-line xl:block" />
+          <FilterGroup label="Access">
+            <Chips label="Visibility" value={filters.visibility} options={VISIBILITY_OPTIONS} onChange={setFilter("visibility")} />
+          </FilterGroup>
           <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-fg">
             <input
               type="checkbox"
@@ -216,9 +178,9 @@ export default function ExploreSP({ user }) {
         </div>
       </section>
 
-      {actionError && (
+      {(actions.error || createError) && (
         <p role="alert" className="text-[13px] font-bold text-live">
-          {actionError}
+          {actions.error || createError}
         </p>
       )}
 
@@ -238,10 +200,11 @@ export default function ExploreSP({ user }) {
             <SessionListCard
               key={s.id}
               session={s}
-              busy={busyId === s.id}
-              onAction={s.visibility === "private" ? request : join}
-              onEnter={enter}
-              onLeave={setLeaving}
+              busy={actions.busyId === s.id}
+              onAction={actions.onAction}
+                onCancel={actions.cancelRequest}
+              onEnter={actions.enter}
+              onLeave={actions.askLeave}
             />
           ))}
         </div>
@@ -258,16 +221,12 @@ export default function ExploreSP({ user }) {
 
       {createOpen && <CreateSessionModal user={user} onClose={() => setCreateOpen(false)} onCreate={addCreated} />}
 
-      {leaving && (
-        <ConfirmDialog
-          title="Leave this session?"
-          message={`You’ll lose your seat in “${leaving.title}”. You can join again later if seats are still available.`}
-          confirmLabel="Leave session"
-          busy={busyId === leaving.id}
-          onConfirm={confirmLeave}
-          onCancel={() => setLeaving(null)}
-        />
-      )}
+      <LeaveSessionDialog
+        session={actions.leaving}
+        busy={actions.busyId === actions.leaving?.id}
+        onConfirm={actions.confirmLeave}
+        onCancel={actions.cancelLeave}
+      />
     </>
   );
 }

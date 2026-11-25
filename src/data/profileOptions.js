@@ -10,7 +10,6 @@ export const ALL_MODULES = [...new Set(Object.values(MODULES_BY_LEVEL).flat())].
 
 export const PROFILE_LIMITS = {
   bio: 300,
-  years: { min: 1, max: 10 },
   strongModules: 8,
   name: 80,
   age: { min: 15, max: 80 },

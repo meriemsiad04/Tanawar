@@ -68,13 +68,37 @@ export const DEMO_ADMIN = import.meta.env.DEV
     }
   : null;
 
+/**
+ * Dev demo account only: email / password changed from Settings (accountService) are kept here,
+ * so they survive sign-out like a real account would. Stripped from production builds with DEMO_ACCOUNT.
+ */
+const DEMO_ACCOUNT_KEY = "tanawar.demoAccount";
+export const demoAccountOverrides = {
+  get() {
+    try {
+      return JSON.parse(localStorage.getItem(DEMO_ACCOUNT_KEY) ?? "{}");
+    } catch {
+      return {};
+    }
+  },
+  set(patch) {
+    localStorage.setItem(DEMO_ACCOUNT_KEY, JSON.stringify({ ...demoAccountOverrides.get(), ...patch }));
+  },
+  clear: () => localStorage.removeItem(DEMO_ACCOUNT_KEY),
+};
+const demoAccountUser = () => {
+  const { email } = demoAccountOverrides.get();
+  return { ...DEMO_ACCOUNT.user, email: email ?? null, authProvider: "email" };
+};
+
 const DEMO_TOKENS = { "demo-token": DEMO_ACCOUNT?.user, "demo-admin-token": DEMO_ADMIN?.user };
 const demoRegistry = () => (DEMO_REGISTRY?.active() ? DEMO_REGISTRY : null);
 
 export async function signIn({ matricule, password, remember }) {
-  if (DEMO_ACCOUNT && matricule === DEMO_ACCOUNT.matricule && password === DEMO_ACCOUNT.password) {
-    saveSession({ token: "demo-token", user: DEMO_ACCOUNT.user }, remember);
-    return DEMO_ACCOUNT.user;
+  if (DEMO_ACCOUNT && matricule === DEMO_ACCOUNT.matricule && password === (demoAccountOverrides.get().password ?? DEMO_ACCOUNT.password)) {
+    const user = demoAccountUser();
+    saveSession({ token: "demo-token", user }, remember);
+    return user;
   }
   if (DEMO_ADMIN && matricule === DEMO_ADMIN.matricule && password === DEMO_ADMIN.password) {
     saveSession({ token: "demo-admin-token", user: DEMO_ADMIN.user }, remember);
@@ -216,7 +240,8 @@ export async function refreshSessionUser() {
   const token = getSession()?.token;
   if (!token) return null;
   let user;
-  if (import.meta.env.DEV && DEMO_TOKENS[token]) user = DEMO_TOKENS[token];
+  if (import.meta.env.DEV && token === "demo-token") user = demoAccountUser();
+  else if (import.meta.env.DEV && DEMO_TOKENS[token]) user = DEMO_TOKENS[token];
   else if (import.meta.env.DEV && DEMO_REGISTRY.owns(token)) user = DEMO_REGISTRY.me(token);
   else user = await apiRequest("/auth/me", { token });
   if (!user || typeof user !== "object") throw new ApiError("Unexpected response from the server.", { code: "BAD_RESPONSE" });

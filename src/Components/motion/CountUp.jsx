@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import useInView from "./useInView.js";
+import { prefersReducedMotion } from "../../services/appearance.js";
 
 /** Splits "2,480" / "4.8 / 5" into a numeric part and the rest of the string. */
 function parse(value) {
@@ -23,7 +24,7 @@ export default function CountUp({ value, duration = 2000 }) {
 
   useEffect(() => {
     if (!seen || !parsed) return undefined;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (prefersReducedMotion()) {
       setN(parsed.target);
       return undefined;
     }

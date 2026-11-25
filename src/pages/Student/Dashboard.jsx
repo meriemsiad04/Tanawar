@@ -9,6 +9,7 @@ import SessionStatusBadge from "../../Components/sharedC/SessionStatusBadge.jsx"
 import CreateSessionModal from "../../Components/sharedC/CreateSessionModal.jsx";
 import ModuleCard from "../../Components/sharedC/ModuleCard.jsx";
 import SuggestedStudentCard from "../../Components/sharedC/SuggestedStudentCard.jsx";
+import StudyWithMePanel from "../../Components/sharedC/StudyWithMePanel.jsx";
 import { classroomPath, joinSession, leaveSession } from "../../services/sessionsService.js";
 import { useAsync } from "../../hooks/useAsync.js";
 import { getModules, getSuggestedStudents, sendFriendRequest } from "../../services/studentsService.js";
@@ -32,6 +33,33 @@ const RECOMMENDED = [
   { id: 1, module: "Systèmes d’exploitation · L3", status: "Scheduled", statusTone: "clay", reason: "Matches your module", title: "Ordonnancement des processus : exercices type examen", host: { initials: "LO", name: "Lina Ouali", rating: "4.8", className: "bg-accent" }, when: "Tomorrow · 16:00 · 90 min", where: "Bloc 2, Salle 7", booked: 6, capacity: 15, access: "Public" },
   { id: 2, module: "Génie logiciel · L3", status: "Scheduled", statusTone: "clay", reason: "Same field and level", title: "Diagrammes UML : cas d’utilisation et séquence", host: { initials: "RS", name: "Rania Saadi", rating: "4.9", className: "bg-primary" }, when: "Thu · 18:00 · 60 min", where: "Online classroom", whereIcon: "video", booked: 8, capacity: 10, access: "Private" },
   { id: 3, module: "Analyse 2 · L2", status: "Full", statusTone: "neutral", reason: "Module you need help with", title: "Intégrales généralisées : méthode et exercices types", host: { initials: "AK", name: "Amina Khelifi", rating: "4.8", className: "bg-warn" }, when: "Tomorrow · 10:00 · 120 min", where: "Amphi B", booked: 20, capacity: 20, access: "Public" },
+];
+
+// Placeholder: two sessions "created by" the user, to preview the "Your sessions" column until the sessions API exists.
+// Remove (start from []) once real data is wired.
+const inDays = (days, hour, minute = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
+};
+const initialMine = () => [
+  {
+    id: "mine-1", type: "scheduled", title: "Révision SQL : jointures et sous-requêtes", module: "Bases de données", level: "L3",
+    startsAt: inDays(1, 14), mode: "online", meetingLink: "https://meet.google.com/", location: null, seats: 12, visibility: "public",
+    createdAt: Date.now() - 3600_000,
+  },
+  {
+    id: "mine-2", type: "scheduled", title: "Exercices UML : diagrammes de séquence", module: "Génie logiciel", level: "L3",
+    startsAt: inDays(3, 10, 30), mode: "onsite", meetingLink: null, location: "Bloc 5, Salle 12", seats: 20, visibility: "private",
+    createdAt: Date.now() - 2 * 3600_000,
+  },
+];
+
+// Placeholder: pending join requests for the private test session above. Remove (start from []) once real data is wired.
+const INITIAL_REQUESTS = [
+  { id: "req-1", sessionId: "mine-2", session: "Exercices UML : diagrammes de séquence", initials: "SB", name: "Sara Benali", level: "L2", avatarClassName: "bg-primary" },
+  { id: "req-2", sessionId: "mine-2", session: "Exercices UML : diagrammes de séquence", initials: "AK", name: "Amine Kaci", level: "L3", avatarClassName: "bg-accent" },
 ];
 
 function greeting(date = new Date()) {
@@ -152,54 +180,92 @@ function ModulesAndStudents() {
   );
 }
 
-function RunningSessionCard({ session, onEnd }) {
-  const { title, module, level, mode, visibility, seats, joined, duration, meetingLink, location } = session;
-  const online = mode === "online";
+const MY_SESSIONS_SHOWN = 4;
+const hhmm = (d) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+const whenLabel = (iso) => {
+  const d = new Date(iso);
+  const today = d.toDateString() === new Date().toDateString();
+  return `${today ? "Today" : d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} · ${hhmm(d)}`;
+};
+
+/**
+ * Right column, under "Create session": the sessions this user created.
+ * Order: the one running now, then scheduled ones (soonest first), then ended ones (latest first).
+ */
+function MySessionsPanel({ sessions, runningId, onEnd }) {
+  const rank = (s) => (s.id === runningId ? 0 : s.type === "scheduled" ? 1 : 2);
+  const sorted = [...sessions].sort((a, b) =>
+    rank(a) - rank(b) || (rank(a) === 1 ? new Date(a.startsAt) - new Date(b.startsAt) : b.createdAt - a.createdAt)
+  );
+
   return (
-    <Panel title="Your running session" className="flex flex-col gap-2.5">
-      <div className="flex flex-col gap-3 rounded-[14px] border border-live/30 bg-danger-soft p-3.5">
-        <div className="flex items-center justify-between gap-2">
-          <SessionStatusBadge tone="live">Live now</SessionStatusBadge>
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-fg-2">
-            <Icon name={visibility === "private" ? "lock" : "globe"} size="sm" className="!size-3.5" />
-            {visibility === "private" ? "Private" : "Public"}
-          </span>
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <p className="text-sm font-bold leading-5 text-fg">{title}</p>
-          <p className="text-[13px] leading-[19px] text-fg-2">
-            {module} · {level} · {duration} min · {online ? "Online" : location}
-          </p>
-          <p className="text-[13px] leading-[19px] text-fg-2">
-            {joined} / {seats} joined · {Math.max(seats - joined, 0)} seats left
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {online ? (
-            <a
-              href={meetingLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-[38px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-bold text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
-            >
-              <Icon name="video" size="sm" className="!size-4" /> Open classroom
-            </a>
-          ) : (
-            <span className="inline-flex h-[38px] flex-1 items-center justify-center gap-1.5 rounded-xl bg-surface px-3 text-sm font-bold text-fg">
-              <Icon name="pin" size="sm" className="!size-4" /> {location}
-            </span>
-          )}
-          <Button size="s" variant="outline" onClick={onEnd}>
-            End
-          </Button>
-        </div>
-      </div>
+    <Panel title="Your sessions" action={sessions.length > MY_SESSIONS_SHOWN ? <ViewAll /> : null} className="flex flex-col gap-1">
+      {sorted.length ? (
+        <ul className="flex flex-col">
+          {sorted.slice(0, MY_SESSIONS_SHOWN).map((s) => {
+            const live = s.id === runningId;
+            const online = s.mode === "online";
+            return (
+              <li key={s.id} className="flex flex-col gap-2 border-b border-line py-3 last:border-b-0 last:pb-0">
+                <div className="flex items-center justify-between gap-2">
+                  {live ? (
+                    <SessionStatusBadge tone="live">Live now</SessionStatusBadge>
+                  ) : s.type === "scheduled" ? (
+                    <SessionStatusBadge tone="clay">Scheduled</SessionStatusBadge>
+                  ) : (
+                    <SessionStatusBadge tone="neutral">Ended</SessionStatusBadge>
+                  )}
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-fg-3">
+                    <Icon name={s.visibility === "private" ? "lock" : "globe"} size="sm" className="!size-3.5" />
+                    {s.visibility === "private" ? "Private" : "Public"}
+                  </span>
+                </div>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <p className="line-clamp-2 text-sm font-bold leading-5 text-fg">{s.title}</p>
+                  <p className="text-[13px] leading-[19px] text-fg-2">
+                    {whenLabel(s.startsAt)} · {online ? "Online" : s.location}
+                  </p>
+                  {live && (
+                    <p className="text-[13px] leading-[19px] text-fg-2">
+                      {s.joined} / {s.seats} joined
+                    </p>
+                  )}
+                </div>
+                {live && (
+                  <div className="flex flex-wrap gap-2">
+                    {online && (
+                      <a
+                        href={s.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-[38px] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] bg-primary px-3 text-sm font-bold text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
+                      >
+                        <Icon name="video" size="sm" className="!size-4" /> Open
+                      </a>
+                    )}
+                    <Button size="s" variant="outline" onClick={onEnd} className={online ? "" : "flex-1"}>
+                      End
+                    </Button>
+                  </div>
+                )}
+                {!live && s.type === "scheduled" && online && s.meetingLink && (
+                  <a href={s.meetingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[13px] font-bold text-primary-text hover:underline">
+                    Meeting link <Icon name="external" size="sm" className="!size-3.5" />
+                  </a>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="text-[13px] leading-[19px] text-fg-2">Sessions you create will appear here, so you can get back to them quickly.</p>
+      )}
     </Panel>
   );
 }
 
 export default function Dashboard({ user = { name: "Meriem" } }) {
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState(INITIAL_REQUESTS);
   const [running, setRunning] = useState(null); // the session this user is hosting right now
   const [createOpen, setCreateOpen] = useState(false);
   const [created, setCreated] = useState(null);
@@ -207,6 +273,7 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
   const [requested, setRequested] = useState({}); // recommended session id → true once a join request is sent (private sessions)
   const [joinError, setJoinError] = useState("");
   const [upcoming, setUpcoming] = useState(INITIAL_UPCOMING);
+  const [mine, setMine] = useState(initialMine); // sessions this user created (right column), until the sessions API exists
   const join = async ({ id }) => {
     setJoinError("");
     try {
@@ -260,7 +327,7 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
     ]);
   };
   const openSession = (session) => {
-    const id = crypto.randomUUID();
+    const id = session.id ?? crypto.randomUUID();
     setRunning({ ...session, id, joined: 0 });
     // Only private sessions need host approval; public ones are joined instantly.
     setRequests(
@@ -293,8 +360,27 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
 
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex min-w-0 flex-col gap-1.5">
+      {createOpen && (
+        <CreateSessionModal
+          user={user}
+          onClose={() => setCreateOpen(false)}
+          onCreate={(session) => {
+            // TODO: POST the session to the API (resources as multipart) once the backend exists.
+            const mineSession = { ...session, id: crypto.randomUUID(), createdAt: Date.now() };
+            setMine((list) => [mineSession, ...list]);
+            setCreated(session);
+            if (session.type === "instant") openSession(mineSession);
+            else addUpcoming(session);
+            setCreateOpen(false);
+          }}
+        />
+      )}
+
+      {/* Two columns from lg (≥1024px). Row 1: greeting | "Create session" (bottom-aligned with the greeting).
+          Row 2: main column | the user's sessions, so both columns start at the same height.
+          On phones: greeting, Create session, your sessions, then the rest. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_240px] lg:items-start xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-1.5 lg:col-start-1 lg:row-start-1">
           <h1 className="font-serif text-[clamp(26px,2.1vw,30px)] font-bold leading-[1.27] tracking-[-0.005em] text-fg">
             {greeting()}, {user.name}
           </h1>
@@ -303,41 +389,45 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
             {requests.length === 1 ? "" : "s"} to review.
           </p>
         </div>
-        <Button variant="amber" size="m" onClick={() => setCreateOpen(true)}>
+
+        <Button variant="amber" size="m" onClick={() => setCreateOpen(true)} className="w-full lg:col-start-2 lg:row-start-1 lg:self-end">
           <Icon name="plus" size="sm" /> Create session
         </Button>
-      </div>
 
-      {created && (
-        <div role="status" className="flex items-center gap-3 rounded-[14px] border border-line bg-primary-soft px-4 py-3 text-sm text-fg">
-          <Icon name="check" className="text-primary" />
-          <span className="flex-1">
-            <b>{created.title}</b> was created
-            {created.type === "scheduled" ? " and is now live on the platform." : " and is now running."}
-          </span>
-          <button type="button" onClick={() => setCreated(null)} aria-label="Dismiss" className="cursor-pointer text-fg-3 hover:text-fg">
-            <Icon name="close" size="sm" />
-          </button>
-        </div>
-      )}
+        {/* Right column */}
+        <aside aria-label="Your sessions" className="flex min-w-0 flex-col gap-6 lg:col-start-2 lg:row-start-2">
+          <MySessionsPanel sessions={mine} runningId={running?.id} onEnd={endSession} />
+          <Panel title="Needs your attention" className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2.5">
+              <Eyebrow>Join requests{running ? ` · ${running.title}` : ""}</Eyebrow>
+              {requests.length ? (
+                requests.map((r) => <JoinRequestCard key={r.id} request={r} onApprove={approve} onDeny={deny} />)
+              ) : (
+                <p className="text-[13px] leading-[19px] text-fg-2">
+                  {running && running.visibility === "public"
+                    ? "Your session is public: students join instantly, no approval needed."
+                    : "No pending requests. You’re all caught up."}
+                </p>
+              )}
+            </div>
+          </Panel>
+        </aside>
 
-      {createOpen && (
-        <CreateSessionModal
-          user={user}
-          onClose={() => setCreateOpen(false)}
-          onCreate={(session) => {
-            // TODO: POST the session to the API (resources as multipart) once the backend exists.
-            setCreated(session);
-            if (session.type === "instant") openSession(session);
-            else addUpcoming(session);
-            setCreateOpen(false);
-          }}
-        />
-      )}
+        {/* Main column */}
+        <div className="flex min-w-0 flex-col gap-6 lg:col-start-1 lg:row-start-2">
+          {created && (
+            <div role="status" className="flex items-center gap-3 rounded-[14px] border border-line bg-primary-soft px-4 py-3 text-sm text-fg">
+              <Icon name="check" className="text-primary" />
+              <span className="flex-1">
+                <b>{created.title}</b> was created
+                {created.type === "scheduled" ? " and is now live on the platform." : " and is now running."}
+              </span>
+              <button type="button" onClick={() => setCreated(null)} aria-label="Dismiss" className="cursor-pointer text-fg-3 hover:text-fg">
+                <Icon name="close" size="sm" />
+              </button>
+            </div>
+          )}
 
-      {/* Side rail only from xl (≥1280px); on smaller laptops it drops below so the main column keeps its width. */}
-      <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
-        <div className="flex min-w-0 flex-1 flex-col gap-6">
           {/* Happening now */}
           <section className="flex flex-col gap-3.5 rounded-[22px] bg-ink p-6 short:gap-3 short:p-5">
             <div className="flex items-center justify-between">
@@ -361,7 +451,7 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
             </div>
           </section>
 
-         
+
 
           <Panel title="Your upcoming sessions" action={<ViewAll />} className="flex flex-col gap-1.5">
             <div>
@@ -370,26 +460,8 @@ export default function Dashboard({ user = { name: "Meriem" } }) {
               ))}
             </div>
           </Panel>
-        </div>
 
-        {/* Right rail */}
-        <div className={`grid gap-6 xl:flex xl:w-[320px] xl:shrink-0 xl:flex-col 2xl:w-[360px] ${running ? "lg:grid-cols-2" : ""}`}>
-        <Panel title="Needs your attention" className="flex flex-col gap-2.5">
-          <div className="flex flex-col gap-2.5">
-            <Eyebrow>Join requests{running ? ` · ${running.title}` : ""}</Eyebrow>
-            {requests.length ? (
-              requests.map((r) => <JoinRequestCard key={r.id} request={r} onApprove={approve} onDeny={deny} />)
-            ) : (
-              <p className="text-[13px] leading-[19px] text-fg-2">
-                {running && running.visibility === "public"
-                  ? "Your session is public: students join instantly, no approval needed."
-                  : "No pending requests. You’re all caught up."}
-              </p>
-            )}
-
-          </div>
-        </Panel>
-        {running && <RunningSessionCard session={running} onEnd={endSession} />}
+          <StudyWithMePanel />
         </div>
       </div>
 
