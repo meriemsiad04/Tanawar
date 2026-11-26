@@ -128,7 +128,15 @@ export default function ExploreSP({ user }) {
         <div role="status" className="flex items-center gap-3 rounded-[14px] border border-line bg-primary-soft px-4 py-3 text-sm text-fg">
           <Icon name="check" className="text-primary" />
           <span className="flex-1">
-            <b>{created.title}</b> was created and is now live on the platform.
+            {created.type === "scheduled" ? (
+              <>
+                <b>{created.title}</b> was submitted for review. It will be published once an admin approves it.
+              </>
+            ) : (
+              <>
+                <b>{created.title}</b> was created and is now live on the platform.
+              </>
+            )}
           </span>
           <button type="button" onClick={() => setCreated(null)} aria-label="Dismiss" className="cursor-pointer text-fg-3 hover:text-fg">
             <Icon name="close" size="sm" />

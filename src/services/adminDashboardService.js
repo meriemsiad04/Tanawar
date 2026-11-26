@@ -3,6 +3,7 @@ import { apiRequest, isApiConfigured } from "./apiClient.js";
 import { getSession } from "./authService.js";
 import { DEMO_REGISTRY } from "./demoRegistry.js";
 import { DEMO_STUDY_ROOMS } from "./demoStudyRooms.js";
+import { demoSessionCounts } from "./adminSessionsService.js";
 
 /**
  * Admin dashboard overview (/admin). Full contract and permission rules: docs/admin-dashboard.md.
@@ -124,7 +125,7 @@ export async function getAdminOverview(days = 30) {
 export async function getAdminCounts() {
   if (demoActive()) {
     const { pendingVerifications } = DEMO_REGISTRY.overview();
-    return { pendingVerifications, pendingSessionApprovals: null, unresolvedReports: null };
+    return { pendingVerifications, pendingSessionApprovals: demoSessionCounts()?.pendingSessionApprovals ?? null, unresolvedReports: null };
   }
   return call("/admin/counts");
 }
@@ -140,6 +141,7 @@ function demoOverview(days) {
   const inRange = (iso) => new Date(iso).getTime() >= since;
   const reg = DEMO_REGISTRY.overview();
   const study = DEMO_STUDY_ROOMS?.adminOverview() ?? null;
+  const sessions = demoSessionCounts(); // the demo student's sessions (sessionsService stand-in)
 
   const countByDay = (isoList, weight = () => 1) => {
     const m = new Map();
@@ -163,8 +165,8 @@ function demoOverview(days) {
       totalStudents: reg.totalStudents,
       verifiedStudents: reg.verifiedStudents,
       pendingVerifications: reg.pendingVerifications,
-      activeSessions: null,
-      pendingSessionApprovals: null,
+      activeSessions: sessions ? sessions.activeSessions : null,
+      pendingSessionApprovals: sessions ? sessions.pendingSessionApprovals : null,
       unresolvedReports: null,
       studyParticipants: study ? study.participants : null,
     },
@@ -185,7 +187,17 @@ function demoOverview(days) {
           at: p.submittedAt,
         })),
       },
-      sessionApprovals: null,
+      sessionApprovals: sessions
+        ? {
+            total: sessions.pendingSessionApprovals,
+            items: sessions.pending.slice(0, 4).map((s) => ({
+              id: s.id,
+              title: s.title,
+              meta: [s.module, s.host.fullName && `by ${s.host.fullName}`].filter(Boolean).join(" · "),
+              at: s.createdAt,
+            })),
+          }
+        : null,
       reports: null,
     },
   };

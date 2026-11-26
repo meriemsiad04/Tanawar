@@ -1,6 +1,6 @@
 import { DEMO_MODE } from "../config/demo.js";
-import { apiRequest } from "./apiClient.js";
-import { getSession } from "./authService.js";
+import { ApiError, apiRequest } from "./apiClient.js";
+import { DEMO_ACCOUNT, getSession } from "./authService.js";
 
 /**
  * Sessions list, classroom, join/leave, join requests and recommendations.
@@ -8,9 +8,15 @@ import { getSession } from "./authService.js";
  * Expected backend contract (Bearer token; adjust here when the API is built):
  *   GET  /sessions            → [{ id, title, description, module, level, startsAt (ISO), durationMin, seats, joined (participants so far),
  *                                  mode: "online" | "onsite", meetingLink, location, visibility: "public" | "private",
- *                                  host: { id, name, rating, verified }, myStatus: "none" | "joined" | "pending" | "host" }]
- *                               (myStatus = the signed-in student's relation to the session)
- *   POST /sessions            body: the CreateSessionModal session → the created session (same shape as a list item)
+ *                                  host: { id, name, rating, verified }, myStatus: "none" | "joined" | "pending" | "host",
+ *                                  type: "instant" | "scheduled", status: "pending" | "approved" | "rejected" | "cancelled",
+ *                                  removed: boolean, statusReason }]
+ *                               (myStatus = the signed-in student's relation to the session.
+ *                                Moderation (docs/session-management.md): approved sessions are listed to everyone; pending,
+ *                                rejected and removed ones only to their host; cancelled ones to the host and participants.)
+ *   POST /sessions            body: the CreateSessionModal session → the created session (same shape as a list item).
+ *                               Instant sessions are published at once (status "approved"); scheduled ones are created
+ *                               "pending" and only listed to others once an admin approves them.
  *   GET  /sessions/:id        → { id, type: "instant" | "scheduled", title, module, startsAt (ISO), durationMin, seats, joined (participants so far),
  *                                 mode: "online" | "onsite", meetingLink, location, host: { name },
  *                                 resources: [{ id, kind: "file" | "link", name, url }] }
@@ -33,6 +39,17 @@ const call = (path, opts) => apiRequest(path, { token: token(), ...opts });
 const sid = (id) => encodeURIComponent(id);
 
 export const classroomPath = (id) => `/app/classroom/${sid(id)}`;
+
+/**
+ * Where a session stands with moderation, for the student views: "published" (approved: open to everyone),
+ * "pending" (scheduled, waiting for an admin), "rejected", "cancelled" or "removed" (by a moderator).
+ * A session without a status (older API responses) counts as published.
+ */
+export function publicationOf(s) {
+  if (s.removed) return "removed";
+  return ["pending", "rejected", "cancelled"].includes(s.status) ? s.status : "published";
+}
+export const isPublished = (s) => publicationOf(s) === "published";
 
 export async function listSessions() {
   if (isDemo()) return demoSessions();
@@ -90,7 +107,7 @@ export function recommendSessions(list, { modules = [], level = "", friends = []
   const mine = new Set(modules.map((m) => m.toLowerCase()));
   const friendIds = new Set(friends);
   return list
-    .filter((s) => s.myStatus !== "host")
+    .filter((s) => s.myStatus !== "host" && isPublished(s))
     .map((s) => {
       const signals = [
         [mine.has(s.module?.toLowerCase()), "Your module", 3],
@@ -225,7 +242,9 @@ const DEMO_REQUESTS = DEMO_MODE
 // The demo has no backend: what the student does (join, leave, request, create, answer requests) is kept in localStorage.
 const DEMO_KEY = "tanawar.demoSessions";
 const readDemo = () => {
-  const empty = { status: {}, created: [], answered: [] };
+  // moderation: session id → { status, statusReason, removed, reviewedAt, reviewedBy } (set from /admin/sessions);
+  // log / notes: admin actions and internal notes, read by the admin session views only.
+  const empty = { status: {}, created: [], answered: [], moderation: {}, log: [], notes: [] };
   try {
     return { ...empty, ...JSON.parse(localStorage.getItem(DEMO_KEY) ?? "{}") };
   } catch {
@@ -234,14 +253,24 @@ const readDemo = () => {
 };
 const writeDemo = (store) => localStorage.setItem(DEMO_KEY, JSON.stringify(store));
 
-// Sessions the demo user hosts show their own name.
+// Every demo session with its moderation state; the sample sessions were published before the demo began.
+const demoAll = (store = readDemo()) =>
+  [...store.created, ...DEMO_SESSIONS].map((s) => ({ type: "scheduled", status: "approved", removed: false, statusReason: null, ...s, ...store.moderation[s.id] }));
+
+// What the server would list to the demo student: published sessions, plus their own pending / rejected / removed
+// ones and cancelled ones they hosted or joined. Sessions the demo user hosts show their own name.
 const demoSessions = () => {
   const store = readDemo();
   const me = getSession()?.user?.fullName;
-  return [...store.created, ...DEMO_SESSIONS].map((s) => {
-    const live = { ...s, ...store.status[s.id] };
-    return live.myStatus === "host" && me ? { ...live, host: { ...live.host, name: me } } : live;
-  });
+  return demoAll(store)
+    .map((s) => {
+      const live = { ...s, ...store.status[s.id] };
+      return live.myStatus === "host" && me ? { ...live, host: { ...live.host, name: me } } : live;
+    })
+    .filter((s) => {
+      const p = publicationOf(s);
+      return p === "published" || s.myStatus === "host" || (p === "cancelled" && ["joined", "pending"].includes(s.myStatus));
+    });
 };
 
 function demoPatch(id, patch) {
@@ -254,7 +283,13 @@ function demoPatch(id, patch) {
 
 function demoCreate(session) {
   const item = {
-    id: `mine-${Date.now()}`,
+    id: `mine-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    type: session.type,
+    // Like the server: instant sessions go live at once, scheduled ones wait for an admin.
+    status: session.type === "instant" ? "approved" : "pending",
+    removed: false,
+    statusReason: null,
+    createdAt: new Date().toISOString(),
     title: session.title,
     description: session.description,
     module: session.module,
@@ -288,8 +323,49 @@ function demoAnswer(request, decision) {
   if (decision === "approve") demoPatch(request.sessionId, (s) => ({ joined: Math.min(s.seats, s.joined + 1) }));
 }
 
-// "Enter classroom" from the Sessions pages opens the matching demo session.
+// "Enter classroom" from the Sessions pages opens the matching demo session (published ones only, like the server).
 const demoSessionClassroom = (id) => {
   const s = demoSessions().find((d) => d.id === id);
-  return s ? { ...s, type: "scheduled", host: { name: s.host.name }, resources: [] } : null;
+  return s && isPublished(s) ? { ...s, host: { name: s.host.name }, resources: [] } : null;
 };
+
+/**
+ * Dev stand-in for the admin session endpoints (/admin/sessions…): the same sessions the demo student sees, read and
+ * moderated in this browser's localStorage, so an admin action shows up on the student side after a reload.
+ * It holds only what the demo really has: participant counts but no participant list, no resources and no reports,
+ * which the admin views show as "Not available yet". adminSessionsService checks the transition rules before `act`.
+ * Null in production builds unless VITE_DEMO_MODE is set.
+ */
+export const DEMO_SESSION_ADMIN = DEMO_MODE
+  ? {
+      list() {
+        const store = readDemo();
+        return demoAll(store).map((s) => {
+          const live = { ...s, ...store.status[s.id] };
+          const mine = live.myStatus === "host";
+          const host = mine ? { id: "demo-student", name: DEMO_ACCOUNT?.user.fullName ?? live.host.name, matricule: DEMO_ACCOUNT?.user.matricule } : live.host;
+          return { ...live, host, participantCount: live.joined ?? 0 };
+        });
+      },
+      /** Pending join requests on one session (the host answers them; admins only see them). */
+      joinRequests: (id) => demoJoinRequests().filter((r) => r.sessionId === id),
+      history: (id) => readDemo().log.filter((e) => e.sessionId === id),
+      notes: (id) => readDemo().notes.filter((n) => n.sessionId === id),
+      /** Applies an admin action already validated by adminSessionsService. `patch`: the new moderation fields. */
+      act(id, action, patch, { reason, by }) {
+        const store = readDemo();
+        if (!demoAll(store).some((s) => s.id === id)) throw new ApiError("Session not found.", { status: 404, code: "NOT_FOUND" });
+        const at = new Date().toISOString();
+        store.moderation[id] = { ...store.moderation[id], ...patch, reviewedAt: at, reviewedBy: by };
+        store.log = [...store.log, { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, sessionId: id, action, reason: reason || null, by, at }];
+        writeDemo(store);
+      },
+      addNote(id, text, by) {
+        const store = readDemo();
+        const at = new Date().toISOString();
+        store.notes = [...store.notes, { id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, sessionId: id, text, by, at }];
+        store.log = [...store.log, { id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, sessionId: id, action: "note_added", reason: null, by, at }];
+        writeDemo(store);
+      },
+    }
+  : null;

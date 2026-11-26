@@ -89,6 +89,9 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Ban,
+  CircleX,
+  NotebookPen,
 } from "lucide-react";
 
 /**
@@ -188,6 +191,9 @@ const ICONS = {
   sort: ArrowUpDown,
   arrowUp: ArrowUp,
   arrowDown: ArrowDown,
+  ban: Ban,
+  circleX: CircleX,
+  note: NotebookPen,
 };
 
 // The only sizes allowed in the UI.

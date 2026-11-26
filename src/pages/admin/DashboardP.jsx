@@ -284,7 +284,14 @@ function PopularModules({ modules, days }) {
 
 const TASK_GROUPS = [
   { key: "verifications", label: "Student verifications", icon: "userCheck", href: PATHS.students, missing: "Registration queue unavailable." },
-  { key: "sessionApprovals", label: "Session approvals", icon: "clipboard", href: PATHS.approvals, missing: "Needs the session approvals API." },
+  {
+    key: "sessionApprovals",
+    label: "Session approvals",
+    icon: "clipboard",
+    href: PATHS.approvals,
+    itemHref: (t) => `${PATHS.approvals}?session=${encodeURIComponent(t.id)}`,
+    missing: "Needs the session approvals API.",
+  },
   { key: "reports", label: "Reports", icon: "flag", href: PATHS.reports, missing: "Needs the reports API." },
 ];
 
@@ -320,7 +327,7 @@ function PendingTasks({ tasks, now }) {
                   <ul className="flex flex-col gap-1">
                     {group.items.map((t) => (
                       <li key={t.id}>
-                        <a href={g.href} className="flex items-center gap-3 rounded-xl px-2.5 py-2 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+                        <a href={g.itemHref?.(t) ?? g.href} className="flex items-center gap-3 rounded-xl px-2.5 py-2 hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
                           <span className="flex min-w-0 flex-1 flex-col">
                             <span className="truncate text-sm font-semibold text-fg">{t.title}</span>
                             {t.meta && <span className="truncate text-xs text-fg-2">{t.meta}</span>}

@@ -1,6 +1,7 @@
 import Button from "../uiC/Button.jsx";
 import Icon from "../uiC/Icon.jsx";
 import SessionStatusBadge from "./SessionStatusBadge.jsx";
+import { publicationOf } from "../../services/sessionsService.js";
 
 /** "Sat 28 Nov, 10:00" */
 const formatWhen = (iso) => {
@@ -16,20 +17,27 @@ export default function BookingRow({ session, busy = false, onEnter, onLeave, on
   const { title, module, startsAt, host, myStatus } = session;
   const joined = myStatus === "joined";
   const hosting = myStatus === "host";
+  // Cancelled or removed by a moderator: kept in the list so the student knows, but nothing can be done with it.
+  const closed = publicationOf(session) !== "published";
   return (
     <article className="flex flex-col gap-3 rounded-[18px] border border-line bg-surface px-5 py-4 sm:flex-row sm:items-center">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-center gap-2">
-          <SessionStatusBadge tone={hosting ? "clay" : joined ? "joined" : "warn"}>{hosting ? "Hosting" : joined ? "Joined" : "Pending"}</SessionStatusBadge>
+          {closed ? (
+            <SessionStatusBadge tone="neutral">Cancelled</SessionStatusBadge>
+          ) : (
+            <SessionStatusBadge tone={hosting ? "clay" : joined ? "joined" : "warn"}>{hosting ? "Hosting" : joined ? "Joined" : "Pending"}</SessionStatusBadge>
+          )}
           <span className="truncate text-xs font-semibold text-fg-2">{module}</span>
         </div>
-        <h3 className="truncate text-[15px] font-bold leading-5 text-fg">{title}</h3>
+        <h3 className={`truncate text-[15px] font-bold leading-5 ${closed ? "text-fg-2 line-through" : "text-fg"}`}>{title}</h3>
         <p className="text-[13px] leading-[19px] text-fg-2">
           {formatWhen(startsAt)}
           {hosting ? "" : ` · ${host.name}`}
+          {closed && session.statusReason ? ` · ${session.statusReason}` : ""}
         </p>
       </div>
-      {hosting ? (
+      {closed ? null : hosting ? (
         <Button size="s" onClick={() => onEnter?.(session)}>
           Enter classroom
         </Button>

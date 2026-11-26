@@ -2,7 +2,7 @@ import Avatar from "../uiC/Avatar.jsx";
 import Button from "../uiC/Button.jsx";
 import Icon from "../uiC/Icon.jsx";
 import SessionStatusBadge from "./SessionStatusBadge.jsx";
-import { sessionPlace, sessionState } from "../../services/sessionsService.js";
+import { publicationOf, sessionPlace, sessionState } from "../../services/sessionsService.js";
 import { studentPath } from "../../services/studentsService.js";
 
 const initialsOf = (n = "") => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
@@ -22,6 +22,14 @@ const Tag = ({ tone, icon, children }) => (
     </span>
   </SessionStatusBadge>
 );
+
+/** Moderation states other than "published" (see publicationOf): card badge and disabled footer button. */
+const MODERATION = {
+  pending: { badge: "Awaiting approval", tone: "warn", icon: "clock", action: "Waiting for admin approval" },
+  rejected: { badge: "Not approved", tone: "clay", icon: "circleX", action: "Not approved by an admin" },
+  cancelled: { badge: "Cancelled", tone: "neutral", icon: "ban", action: "Session cancelled" },
+  removed: { badge: "Removed", tone: "clay", icon: "trash", action: "Removed by a moderator" },
+};
 
 const Meta = ({ icon, className = "", children }) => (
   <li className={`flex min-w-0 items-center gap-2 ${className}`}>
@@ -45,9 +53,18 @@ const TextAction = ({ children, ...rest }) => (
  * Footer button, picked from the student's relation to the session:
  * host → Enter classroom (outline) · joined → Enter classroom + Leave · pending → Pending + Cancel
  * full → Full (disabled) · private → Request to join · public → Join session.
+ * A session that isn't published (waiting for approval, rejected, cancelled, removed) can't be joined or entered.
  */
 function CardAction({ session, busy, onAction, onCancel, onEnter, onLeave }) {
   const { myStatus, visibility, seats, joined } = session;
+  const publication = publicationOf(session);
+
+  if (publication !== "published")
+    return (
+      <Button variant="outline" size="m" disabled className="w-full disabled:opacity-60">
+        <Icon name={MODERATION[publication].icon} size="sm" /> {MODERATION[publication].action}
+      </Button>
+    );
 
   if (myStatus === "host")
     return (
@@ -109,6 +126,7 @@ export default function SessionListCard({ session, reasons = [], busy = false, o
   const percent = Math.min(100, Math.round((joined / seats) * 100));
   const online = mode === "online";
   const state = sessionState(session);
+  const moderation = MODERATION[publicationOf(session)];
 
   return (
     <article className="flex flex-col gap-4 rounded-[20px] border border-line bg-surface p-5 transition duration-200 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0">
@@ -122,8 +140,14 @@ export default function SessionListCard({ session, reasons = [], busy = false, o
         </ul>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        {state === "live" && <SessionStatusBadge tone="live">Live now</SessionStatusBadge>}
-        {state === "ended" && <SessionStatusBadge tone="neutral">Ended</SessionStatusBadge>}
+        {moderation ? (
+          <Tag tone={moderation.tone} icon={moderation.icon}>{moderation.badge}</Tag>
+        ) : (
+          <>
+            {state === "live" && <SessionStatusBadge tone="live">Live now</SessionStatusBadge>}
+            {state === "ended" && <SessionStatusBadge tone="neutral">Ended</SessionStatusBadge>}
+          </>
+        )}
         <span className="rounded-lg bg-accent-soft px-2.5 py-[5px] text-xs font-bold leading-4 text-accent-ink">{module}</span>
         {online ? (
           <Tag tone="joined" icon="wifi">Online</Tag>
@@ -140,6 +164,11 @@ export default function SessionListCard({ session, reasons = [], busy = false, o
       <div className="flex flex-col gap-1">
         <h3 className="text-[17px] font-bold leading-6 text-fg">{title}</h3>
         {description && <p className="line-clamp-2 text-sm leading-5 text-fg-2">{description}</p>}
+        {moderation && session.statusReason && (
+          <p className="mt-1 rounded-[10px] bg-surface-2 px-3 py-2 text-[13px] leading-[18px] text-fg-2">
+            <b className="text-fg">Reason:</b> {session.statusReason}
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-2.5">

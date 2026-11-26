@@ -91,12 +91,12 @@ Sidebar badges, cheap enough to call on every admin page load.
 
 With `npm run dev` and no `VITE_API_URL`, the overview is built from what the in-browser stand-ins actually hold:
 registrations from `demoRegistry` (sign up a few students, review them as admin `100000000001` / `admin1234`) and rooms /
-sittings from `demoStudyRooms` (which includes its simulated students). Sessions, session approvals, reports, resources and
+sittings from `demoStudyRooms` (which includes its simulated students), and active sessions / session approvals from the demo student's sessions (`sessionsService`). Reports, resources and
 popular modules have no platform-wide stand-in, so they show **"Not available yet"**. The header shows a "Demo data" badge.
 
 ## Missing backend work
 
 - All of the above endpoints, plus the admin role check on each.
-- Session approval workflow (sessions currently publish directly), reports, and announcements: the dashboard's numbers for
+- Session approval endpoints (docs/session-management.md), reports, and announcements: the dashboard's numbers for
   these depend on those features existing.
 - An activity/event log table (or a view over registrations, sessions, resources, reports, study rooms) to feed `activity`.

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listSessions } from "../services/sessionsService.js";
+import { isPublished, listSessions } from "../services/sessionsService.js";
 import { useNotifications } from "./useNotifications.js";
 
 /**
@@ -14,7 +14,7 @@ export function useNavCounts() {
   useEffect(() => {
     let active = true;
     listSessions()
-      .then((list) => active && setBookings(list.filter((s) => s.myStatus === "joined" || s.myStatus === "pending").length))
+      .then((list) => active && setBookings(list.filter((s) => (s.myStatus === "joined" || s.myStatus === "pending") && isPublished(s)).length))
       .catch(() => {});
     return () => {
       active = false;

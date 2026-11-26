@@ -4,7 +4,7 @@ import SessionListCard from "../../Components/sharedC/SessionListCard.jsx";
 import LeaveSessionDialog from "../../Components/sharedC/LeaveSessionDialog.jsx";
 import { useAsync } from "../../hooks/useAsync.js";
 import { useSessionActions } from "../../hooks/useSessionActions.js";
-import { listSessions, sessionState } from "../../services/sessionsService.js";
+import { isPublished, listSessions, sessionState } from "../../services/sessionsService.js";
 
 const Note = ({ children }) => (
   <div className="flex flex-col items-start gap-3 rounded-[18px] border border-line bg-surface p-5 text-[13px] leading-[19px] text-fg-2">{children}</div>
@@ -24,7 +24,8 @@ export default function ClassroomsP() {
   const rooms = useMemo(
     () =>
       apply(data ?? [])
-        .filter((s) => s.mode === "online" && (s.myStatus === "host" || s.myStatus === "joined"))
+        // Only published sessions have a classroom (not ones waiting for approval, cancelled or removed).
+        .filter((s) => s.mode === "online" && (s.myStatus === "host" || s.myStatus === "joined") && isPublished(s))
         .map((s) => ({ s, state: sessionState(s) }))
         .sort((a, b) => STATE_ORDER[a.state] - STATE_ORDER[b.state] || new Date(a.s.startsAt) - new Date(b.s.startsAt))
         .map(({ s }) => s),
