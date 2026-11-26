@@ -12,17 +12,21 @@ function niceMax(v) {
  * 4px rounded tops on the baseline, a recessive 3-line grid, a tooltip per bar on hover AND keyboard focus,
  * and a "View as table" toggle for screen readers / exact values. No legend: the `title` names the series.
  *
- * Props: data [{ label, long, value }], title (accessible name), format(value) → text, emptyText, height.
+ * Props: data [{ label, long, value }], title (accessible name), format(value) → text, emptyText, height,
+ * barClassName (bar colour class, default bg-primary), integer (counts: axis ticks stay whole numbers).
  */
-export default function ActivityBarChart({ data, title, format = (v) => String(v), emptyText = "No activity in this period yet.", height = 180 }) {
+export default function ActivityBarChart({ data, title, format = (v) => String(v), emptyText = "No activity in this period yet.", height = 180, barClassName = "bg-primary", integer = false }) {
   const [hover, setHover] = useState(null);
   const [asTable, setAsTable] = useState(false);
   const tableId = useId();
-  const max = niceMax(Math.max(0, ...data.map((d) => d.value)));
+  const top = niceMax(Math.max(0, ...data.map((d) => d.value)));
+  // Counts: the mid tick (max / 2) must be a whole number too, so 1 → 2, 5 → 10.
+  const max = integer && top % 2 ? top * 2 : top;
   const empty = data.every((d) => !d.value);
   const ticks = [max, max / 2, 0];
   // Too many bars for every label on narrow screens: label every other one (all still have tooltips).
-  const sparse = data.length > 8;
+  // Small screens: label every `stride`-th bar, counted back from the newest so the last bar is always labelled.
+  const stride = data.length > 14 ? Math.ceil(data.length / 7) : data.length > 8 ? 2 : 1;
 
   return (
     <figure className="flex flex-col gap-2">
@@ -98,7 +102,7 @@ export default function ActivityBarChart({ data, title, format = (v) => String(v
                   >
                     {/* Hit target = the whole column; the visible bar stays thin. */}
                     <span
-                      className={`block w-full max-w-7 rounded-t-[4px] transition-opacity ${d.value ? "bg-primary" : ""} ${hover !== null && !active ? "opacity-50" : ""}`}
+                      className={`block w-full max-w-7 rounded-t-[4px] transition-opacity ${d.value ? barClassName : ""} ${hover !== null && !active ? "opacity-50" : ""}`}
                       style={{ height: h }}
                     />
                     {active && (
@@ -119,7 +123,7 @@ export default function ActivityBarChart({ data, title, format = (v) => String(v
             {/* X labels */}
             <div aria-hidden="true" className="mt-2 flex gap-[2px] text-[11px] leading-4 text-fg-3">
               {data.map((d, i) => (
-                <span key={d.long} className={`flex-1 truncate text-center ${sparse && i % 2 && i !== data.length - 1 ? "invisible sm:visible" : ""}`}>
+                <span key={d.long} className={`flex-1 truncate text-center ${(data.length - 1 - i) % stride ? "invisible sm:visible" : ""}`}>
                   {d.label}
                 </span>
               ))}

@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { apiRequest } from "./apiClient.js";
 import { getSession } from "./authService.js";
 
@@ -18,7 +19,7 @@ import { getSession } from "./authService.js";
  */
 
 const token = () => getSession()?.token;
-const isDemo = () => Boolean(import.meta.env.DEV) && token() === "demo-token";
+const isDemo = () => Boolean(DEMO_MODE) && token() === "demo-token";
 const call = (path, opts) => apiRequest(path, { token: token(), ...opts });
 
 /** Abbreviation shown in the module tile: the code's letters (INF301 → INF), else the name's initials. */
@@ -107,7 +108,7 @@ function demoAttendance(id, from) {
 }
 
 /* Dev demo account only: sample data so the dashboard can be previewed. Dead code in production builds. */
-const DEMO_MODULES = import.meta.env.DEV
+const DEMO_MODULES = DEMO_MODE
   ? [
       { code: "INF301", name: "Algorithms", publishedSessions: 12 },
       { code: "INF305", name: "Databases", publishedSessions: 9 },
@@ -115,7 +116,7 @@ const DEMO_MODULES = import.meta.env.DEV
       { code: "INF302", name: "Operating Systems", publishedSessions: 5 },
     ]
   : [];
-const DEMO_STUDENTS = import.meta.env.DEV
+const DEMO_STUDENTS = DEMO_MODE
   ? [
       { id: "s1", fullName: "Sara Mebarki", major: "Computer Science", level: "L3", rating: 4.8, verified: true, modules: ["INF301", "INF305"] },
       { id: "s2", fullName: "Nour Saidi", major: "Computer Science", level: "L2", rating: 4.4, verified: true, modules: ["INF302"] },
@@ -123,14 +124,14 @@ const DEMO_STUDENTS = import.meta.env.DEV
       { id: "s4", fullName: "Walid Bouzid", major: "Hydrocarbons & Chemistry", level: "M1", rating: 4.5, verified: false, modules: [] },
     ]
   : [];
-const DEMO_FRIENDS = import.meta.env.DEV
+const DEMO_FRIENDS = DEMO_MODE
   ? [
       { id: "s5", fullName: "Amine Khelifi", major: "Computer Science", level: "M1", rating: 4.9, verified: true },
       { id: "s6", fullName: "Lina Hamidi", major: "Mathematics", level: "L3", rating: 4.7, verified: true },
     ]
   : [];
 // Profile details for the demo students (Connections → student profile).
-const DEMO_DETAILS = import.meta.env.DEV
+const DEMO_DETAILS = DEMO_MODE
   ? {
       s1: { faculty: "Faculty of Sciences", bio: "Front-end lover. Happy to review your React projects.", ratingCount: 27, sessionsGiven: 18, strongModules: ["Web Development", "Algorithms"], interests: ["Web", "UI design"] },
       s2: { faculty: "Faculty of Sciences", bio: "Graph theory fan, always up for a whiteboard session.", ratingCount: 9, sessionsGiven: 6, strongModules: ["Algorithms"], interests: ["Competitive programming"] },

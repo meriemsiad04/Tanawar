@@ -73,6 +73,18 @@ import {
   UserX,
   TriangleAlert,
   Heart,
+  LayoutDashboard,
+  ClipboardCheck,
+  Flag,
+  Layers,
+  Megaphone,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ChartLine,
+  UserPlus,
+  ScrollText,
+  Inbox,
+  ArrowUpRight,
 } from "lucide-react";
 
 /**
@@ -156,6 +168,18 @@ const ICONS = {
   userX: UserX,
   warning: TriangleAlert,
   heart: Heart,
+  dashboard: LayoutDashboard,
+  clipboard: ClipboardCheck,
+  flag: Flag,
+  layers: Layers,
+  megaphone: Megaphone,
+  panelClose: PanelLeftClose,
+  panelOpen: PanelLeftOpen,
+  chartLine: ChartLine,
+  userPlus: UserPlus,
+  logs: ScrollText,
+  inbox: Inbox,
+  arrowUpRight: ArrowUpRight,
 };
 
 // The only sizes allowed in the UI.

@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { ApiError, apiRequest } from "./apiClient.js";
 import { getSession } from "./authService.js";
 import { FONT_SIZES, THEMES, applyAppearance, getDeviceAppearance } from "./appearance.js";
@@ -14,7 +15,7 @@ import { FONT_SIZES, THEMES, applyAppearance, getDeviceAppearance } from "./appe
  * Read settings through hooks/useSettings.js (shared store at the bottom), never fetch them in components.
  */
 const token = () => getSession()?.token;
-const isDemo = () => Boolean(import.meta.env.DEV) && token() === "demo-token";
+const isDemo = () => Boolean(DEMO_MODE) && token() === "demo-token";
 const call = (path, opts) => apiRequest(path, { token: token(), ...opts });
 
 export const LANGUAGES = [

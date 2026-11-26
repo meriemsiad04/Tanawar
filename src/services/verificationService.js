@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { ApiError, apiRequest } from "./apiClient.js";
 import { MATRICULE_PATTERN, getSession, toRegistrationError, updateSessionUser } from "./authService.js";
 import { DEMO_REGISTRY } from "./demoRegistry.js";
@@ -99,8 +100,8 @@ const syncSession = (v) => {
 
 export async function getMyVerification() {
   const t = token();
-  if (import.meta.env.DEV && t === "demo-token") return syncSession({ ...verificationFromSession(), status: "approved" });
-  if (import.meta.env.DEV && DEMO_REGISTRY.owns(t)) return syncSession(DEMO_REGISTRY.myVerification(t));
+  if (DEMO_MODE && t === "demo-token") return syncSession({ ...verificationFromSession(), status: "approved" });
+  if (DEMO_MODE && DEMO_REGISTRY.owns(t)) return syncSession(DEMO_REGISTRY.myVerification(t));
   const v = await call("/students/me/verification");
   if (!v?.status) throw new ApiError("Unexpected response from the server.", { code: "BAD_RESPONSE" });
   return syncSession(v);
@@ -112,7 +113,7 @@ export const getCachedVerification = verificationFromSession;
 export async function resubmitVerification({ fullName, matricule, documentType, document }) {
   const t = token();
   try {
-    if (import.meta.env.DEV && DEMO_REGISTRY.owns(t)) return syncSession(await DEMO_REGISTRY.resubmit(t, { fullName, matricule, documentType, document }));
+    if (DEMO_MODE && DEMO_REGISTRY.owns(t)) return syncSession(await DEMO_REGISTRY.resubmit(t, { fullName, matricule, documentType, document }));
     const body = new FormData();
     body.append("fullName", fullName);
     body.append("matricule", matricule);
@@ -127,31 +128,31 @@ export async function resubmitVerification({ fullName, matricule, documentType, 
 /* ───────────── Admin ───────────── */
 
 export async function listRegistrations({ status = "pending", q = "" } = {}) {
-  if (import.meta.env.DEV && demo()) return demo().list({ status, q });
+  if (DEMO_MODE && demo()) return demo().list({ status, q });
   const params = new URLSearchParams({ status });
   if (q.trim()) params.set("q", q.trim());
   return call(`/admin/registrations?${params}`);
 }
 
 export async function getRegistration(id) {
-  if (import.meta.env.DEV && demo()) return demo().get(id);
+  if (DEMO_MODE && demo()) return demo().get(id);
   return call(`/admin/registrations/${rid(id)}`);
 }
 
 /** Fetches the document with the admin's token (no public link exists) and returns a Blob for preview. */
 export async function getRegistrationDocument(id) {
-  if (import.meta.env.DEV && demo()) return demo().document(id);
+  if (DEMO_MODE && demo()) return demo().document(id);
   return call(`/admin/registrations/${rid(id)}/document`, { responseType: "blob" });
 }
 
 export async function approveRegistration(id) {
-  if (import.meta.env.DEV && demo()) return demo().decide(id, "approved");
+  if (DEMO_MODE && demo()) return demo().decide(id, "approved");
   return call(`/admin/registrations/${rid(id)}/approve`, { method: "POST" });
 }
 
 export async function rejectRegistration(id, reason) {
   const text = reason.trim();
   if (text.length < REJECTION_REASON_MIN) throw new ApiError("Explain the reason so the student knows what to fix.", { code: "REASON_REQUIRED" });
-  if (import.meta.env.DEV && demo()) return demo().decide(id, "rejected", text);
+  if (DEMO_MODE && demo()) return demo().decide(id, "rejected", text);
   return call(`/admin/registrations/${rid(id)}/reject`, { method: "POST", body: { reason: text } });
 }

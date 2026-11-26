@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { apiRequest } from "./apiClient.js";
 import { getSession } from "./authService.js";
 import { NOTIFICATION_KIND_PREF, getSettings } from "./settingsService.js";
@@ -17,7 +18,7 @@ import { NOTIFICATION_KIND_PREF, getSettings } from "./settingsService.js";
  * read it with hooks/useNotifications.js, never fetch notifications directly in components.
  */
 const token = () => getSession()?.token;
-const isDemo = () => Boolean(import.meta.env.DEV) && token() === "demo-token";
+const isDemo = () => Boolean(DEMO_MODE) && token() === "demo-token";
 const call = (path, opts) => apiRequest(path, { token: token(), ...opts });
 
 const DEMO_KEY = "tanawar.demoNotificationsRead"; // "1" = all read (legacy) or a JSON array of read ids
@@ -153,7 +154,7 @@ export const notificationsStore = {
 /* Dev demo account only: sample notifications. Dead code in production builds. */
 const ago = (min) => new Date(Date.now() - min * 60 * 1000).toISOString();
 const demoNotifications = () =>
-  import.meta.env.DEV
+  DEMO_MODE
     ? [
         { id: "n1", kind: "reminder", text: "Amine Khelifi starts “Dynamic Programming Bootcamp” today at 18:00.", createdAt: ago(25), read: false, href: "/app/sessions" },
         {

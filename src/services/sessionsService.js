@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { apiRequest } from "./apiClient.js";
 import { getSession } from "./authService.js";
 
@@ -27,7 +28,7 @@ import { getSession } from "./authService.js";
  * Filtering and ranking happen here (filterSessions, recommendSessions) so the API only has to return the list.
  */
 const token = () => getSession()?.token;
-const isDemo = () => Boolean(import.meta.env.DEV) && token() === "demo-token";
+const isDemo = () => Boolean(DEMO_MODE) && token() === "demo-token";
 const call = (path, opts) => apiRequest(path, { token: token(), ...opts });
 const sid = (id) => encodeURIComponent(id);
 
@@ -171,7 +172,7 @@ export async function answerJoinRequest(request, decision) {
 
 /* Dev demo account only: sample sessions matching the dashboard placeholders. Dead code in production builds. */
 const inHours = (h) => new Date(Date.now() + h * 3600 * 1000).toISOString();
-const DEMO_CLASSROOMS = import.meta.env.DEV
+const DEMO_CLASSROOMS = DEMO_MODE
   ? {
       1: () => ({
         id: 1, type: "scheduled", title: "Ordonnancement des processus : exercices type examen", module: "Systèmes d’exploitation · L3",
@@ -200,7 +201,7 @@ const at = (days, h, m = 0) => {
   return d.toISOString();
 };
 const AMINE = { id: "s5", name: "Amine Khelifi", rating: 4.9, verified: true, className: "bg-primary" };
-const DEMO_SESSIONS = import.meta.env.DEV
+const DEMO_SESSIONS = DEMO_MODE
   ? [
       // Started 20 min ago: the "Happening now" session from the dashboard (its classroom demo is "live-sql").
       { id: "live-sql", title: "Jointures SQL et normalisation", description: "Live: jointures, formes normales et exercices corrigés.", module: "Databases", level: "L3", startsAt: new Date(Date.now() - 20 * 60000).toISOString(), durationMin: 60, seats: 15, joined: 12, mode: "online", meetingLink: "https://meet.jit.si/tanawar-live-sql", visibility: "public", host: { name: "Yacine Haddad", rating: 4.8, verified: true, className: "bg-ink-2" }, myStatus: "joined" },
@@ -214,7 +215,7 @@ const DEMO_SESSIONS = import.meta.env.DEV
       { id: "recursion", title: "Recursion for Beginners", description: "Base cases, the call stack and classic recursive exercises.", module: "Algorithms", level: "L1", startsAt: at(0, 18), durationMin: 90, seats: 10, joined: 5, mode: "online", meetingLink: "https://meet.google.com/", visibility: "private", host: { id: "me", name: "You", rating: 4.8, verified: true, className: "bg-primary" }, myStatus: "host" },
     ]
   : [];
-const DEMO_REQUESTS = import.meta.env.DEV
+const DEMO_REQUESTS = DEMO_MODE
   ? [
       { id: "jr1", sessionId: "recursion", sessionTitle: "Recursion for Beginners", student: { id: "s2", fullName: "Nour Saidi", major: "Computer Science", level: "L2" } },
       { id: "jr2", sessionId: "recursion", sessionTitle: "Recursion for Beginners", student: { id: "s1", fullName: "Sara Mebarki", major: "Computer Science", level: "L3" } },

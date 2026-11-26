@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { ApiError, isApiConfigured } from "./apiClient.js";
 
 /**
@@ -111,6 +112,7 @@ function createDemoRegistry() {
         fullName,
         matricule,
         status: "pending",
+        createdAt: new Date().toISOString(),
         submittedAt: new Date().toISOString(),
         attempts: 1,
         ...(await docFields({ documentType, document })),
@@ -199,6 +201,32 @@ function createDemoRegistry() {
       return (await fetch(rec.document.dataUrl)).blob();
     },
 
+    /**
+     * Admin overview (adminDashboardService): only what this registry really holds. Every record is a student account.
+     * Records created before createdAt existed fall back to their latest submission date.
+     */
+    overview() {
+      const list = load();
+      const count = (status) => list.filter((r) => r.status === status).length;
+      return {
+        totalStudents: list.length,
+        verifiedStudents: count("approved"),
+        pendingVerifications: count("pending"),
+        signups: list.map((r) => r.createdAt ?? r.submittedAt),
+        pending: list
+          .filter((r) => r.status === "pending")
+          .sort((a, b) => a.submittedAt.localeCompare(b.submittedAt))
+          .map((r) => ({ id: r.id, fullName: r.fullName, matricule: r.matricule, submittedAt: r.submittedAt, attempts: r.attempts ?? 1 })),
+        events: list.flatMap((r) => [
+          { id: `reg-${r.id}`, type: "registration", actor: r.fullName, at: r.createdAt ?? r.submittedAt },
+          ...(r.attempts > 1 && r.status === "pending" ? [{ id: `resub-${r.id}-${r.attempts}`, type: "resubmission", actor: r.fullName, at: r.submittedAt }] : []),
+          ...(r.reviewedAt
+            ? [{ id: `rev-${r.id}-${r.reviewedAt}`, type: r.status === "approved" ? "approval" : "rejection", actor: r.reviewedBy ?? "Admin", subject: r.fullName, at: r.reviewedAt }]
+            : []),
+        ]),
+      };
+    },
+
     decide(id, decision, reason) {
       const list = load();
       const rec = list.find((r) => r.id === id);
@@ -211,4 +239,4 @@ function createDemoRegistry() {
   };
 }
 
-export const DEMO_REGISTRY = import.meta.env.DEV ? createDemoRegistry() : null;
+export const DEMO_REGISTRY = DEMO_MODE ? createDemoRegistry() : null;

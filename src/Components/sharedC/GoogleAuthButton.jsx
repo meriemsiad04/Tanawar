@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "../../services/demoMode.js";
 import { useEffect, useRef, useState } from "react";
 import googleMark from "../../assets/brand/google-g.svg";
 
@@ -83,7 +84,7 @@ export default function GoogleAuthButton({ onCredential, onError, disabled = fal
     );
   }
 
-  const devDemo = Boolean(import.meta.env.DEV) && !CLIENT_ID;
+  const devDemo = Boolean(DEMO_MODE) && !CLIENT_ID;
   const simulate = () => {
     const email = window.prompt("Dev demo: which Google account? (no real Google sign-in happens)", "student.demo@gmail.com");
     if (email?.trim()) onCredential(`demo-google:${email.trim().toLowerCase()}`);

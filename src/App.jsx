@@ -23,9 +23,38 @@ import VerificationStatusP from "./pages/Student/VerificationStatusP.jsx";
 import NotFoundP from "./pages/errors/NotFoundP.jsx";
 import AdminLayout from "./layouts/AdminLayout.jsx";
 import RegistrationsP from "./pages/admin/RegistrationsP.jsx";
+import AdminDashboardP from "./pages/admin/DashboardP.jsx";
+import ApprovalSP from "./pages/admin/ApprovalSP.jsx";
+import ManagementSP from "./pages/admin/ManagementSP.jsx";
+import UserManagementP from "./pages/admin/UserManagementP.jsx";
+import ResourcesModerationP from "./pages/admin/ResourcesModerationP.jsx";
+import AdminModulesP from "./pages/admin/ModulesP.jsx";
+import ReportsP from "./pages/admin/ReportsP.jsx";
+import AdminSettingP from "./pages/admin/AdminSettingP.jsx";
+import StudyWithMeAdminP from "./pages/admin/StudyWithMeAdminP.jsx";
+import AnnouncementsP from "./pages/admin/AnnouncementsP.jsx";
+import AnalyticsP from "./pages/admin/AnalyticsP.jsx";
+import AdminManagementP from "./pages/admin/AdminManagementP.jsx";
 import { HOME_BY_ROLE, VERIFY_PATH, clearSession, getSession, isVerified } from "./services/authService.js";
 
 const SETUP_PATH = "/app/profile/setup";
+
+// Admin area: path → [sidebar key (ADMIN_NAV in AdminSidebar), page]. Admin home is /admin (HOME_BY_ROLE.admin).
+const ADMIN_ROUTES = {
+  "/admin": ["dashboard", AdminDashboardP],
+  "/admin/registrations": ["students", RegistrationsP],
+  "/admin/users": ["students", UserManagementP],
+  "/admin/sessions": ["sessions", ManagementSP],
+  "/admin/sessions/approvals": ["sessions", ApprovalSP],
+  "/admin/study": ["study", StudyWithMeAdminP],
+  "/admin/resources": ["resources", ResourcesModerationP],
+  "/admin/reports": ["reports", ReportsP],
+  "/admin/modules": ["academic", AdminModulesP],
+  "/admin/announcements": ["announcements", AnnouncementsP],
+  "/admin/analytics": ["analytics", AnalyticsP],
+  "/admin/settings": ["settings", AdminSettingP],
+  "/admin/admins": ["admins", AdminManagementP],
+};
 
 function handleLogout() {
   clearSession();
@@ -48,14 +77,10 @@ export default function App() {
       window.location.replace(HOME_BY_ROLE.student);
       return null;
     }
-    // Only the registration review queue exists so far; the admin dashboard will add its pages here.
-    if (path !== "/admin/registrations") {
-      window.location.replace("/admin/registrations");
-      return null;
-    }
+    const [active, Page] = ADMIN_ROUTES[path] ?? ["", null];
     return (
-      <AdminLayout user={session.user} onLogout={handleLogout}>
-        <RegistrationsP />
+      <AdminLayout active={active} user={session.user} onLogout={handleLogout}>
+        {Page ? <Page /> : <NotFoundP home="/admin" />}
       </AdminLayout>
     );
   }

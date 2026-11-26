@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { ApiError, VERIFICATION_EVENT, apiRequest } from "./apiClient.js";
 import { DEMO_REGISTRY } from "./demoRegistry.js";
 
@@ -51,7 +52,7 @@ export const isVerified = (user) => user?.role === "admin" || user?.verification
  * Frontend-only demo account, available in `npm run dev` only (stripped from production builds).
  * Remove together with the DEV branch in signIn() once the backend exists.
  */
-export const DEMO_ACCOUNT = import.meta.env.DEV
+export const DEMO_ACCOUNT = DEMO_MODE
   ? {
       matricule: "202131012345",
       password: "demo1234",
@@ -60,7 +61,7 @@ export const DEMO_ACCOUNT = import.meta.env.DEV
   : null;
 
 /** Dev-only admin, to review demo registrations at /admin/registrations. Stripped from production builds. */
-export const DEMO_ADMIN = import.meta.env.DEV
+export const DEMO_ADMIN = DEMO_MODE
   ? {
       matricule: "100000000001",
       password: "admin1234",
@@ -104,7 +105,7 @@ export async function signIn({ matricule, password, remember }) {
     saveSession({ token: "demo-admin-token", user: DEMO_ADMIN.user }, remember);
     return DEMO_ADMIN.user;
   }
-  const demo = import.meta.env.DEV ? demoRegistry()?.signIn(matricule, password) : null;
+  const demo = DEMO_MODE ? demoRegistry()?.signIn(matricule, password) : null;
   if (demo) {
     saveSession(demo, remember);
     return demo.user;
@@ -174,7 +175,7 @@ export function toRegistrationError(err) {
  * Email and Google sign-ups send the same verification fields: Google only replaces email + password with registrationToken.
  */
 export async function signUp({ method, email, password, registrationToken, fullName, matricule, documentType, document }) {
-  const demo = import.meta.env.DEV ? demoRegistry() : null;
+  const demo = DEMO_MODE ? demoRegistry() : null;
   if (demo) {
     const reserved = [DEMO_ACCOUNT?.matricule, DEMO_ADMIN?.matricule].filter(Boolean);
     const googleEmail = method === "google" ? registrationToken?.replace(/^demo-google:/, "") : null;
@@ -210,7 +211,7 @@ export async function signUp({ method, email, password, registrationToken, fullN
  * when the Google account isn't registered yet (the caller then shows the verification form).
  */
 export async function signInWithGoogle(idToken, { remember = true } = {}) {
-  const demo = import.meta.env.DEV ? demoRegistry() : null;
+  const demo = DEMO_MODE ? demoRegistry() : null;
   if (demo && idToken.startsWith("demo-google:")) {
     const email = idToken.slice("demo-google:".length);
     const existing = demo.signInWithGoogle(email);
@@ -240,9 +241,9 @@ export async function refreshSessionUser() {
   const token = getSession()?.token;
   if (!token) return null;
   let user;
-  if (import.meta.env.DEV && token === "demo-token") user = demoAccountUser();
-  else if (import.meta.env.DEV && DEMO_TOKENS[token]) user = DEMO_TOKENS[token];
-  else if (import.meta.env.DEV && DEMO_REGISTRY.owns(token)) user = DEMO_REGISTRY.me(token);
+  if (DEMO_MODE && token === "demo-token") user = demoAccountUser();
+  else if (DEMO_MODE && DEMO_TOKENS[token]) user = DEMO_TOKENS[token];
+  else if (DEMO_MODE && DEMO_REGISTRY.owns(token)) user = DEMO_REGISTRY.me(token);
   else user = await apiRequest("/auth/me", { token });
   if (!user || typeof user !== "object") throw new ApiError("Unexpected response from the server.", { code: "BAD_RESPONSE" });
   updateSessionUser(user);

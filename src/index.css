@@ -33,6 +33,11 @@
   --color-fg-2: #4a4868;
   --color-fg-3: #5c5a78;
 
+  /* Green: success / healthy states and the admin area's light-green accents. */
+  --color-success: #16a35a;
+  --color-success-ink: #0e6b3b;
+  --color-success-soft: #e8f7ee;
+
   --color-danger-soft: #fdecec;
   --color-warn: #a35a00;
   --color-warn-soft: #fff4d6;
@@ -88,6 +93,10 @@
   --color-fg: #eeedff;
   --color-fg-2: #b6b3de;
   --color-fg-3: #8e8bbd;
+
+  --color-success: #2fb86f;
+  --color-success-ink: #8fe6b6;
+  --color-success-soft: #0f2f25;
 
   --color-danger-soft: #3a1520;
   --color-warn: #ffb547;

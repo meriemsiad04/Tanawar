@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { apiRequest } from "./apiClient.js";
 import { getSession } from "./authService.js";
 
@@ -10,7 +11,7 @@ import { getSession } from "./authService.js";
  *                    (resources attached to sessions the student can see; `session` = the session it was shared in)
  */
 const token = () => getSession()?.token;
-const isDemo = () => Boolean(import.meta.env.DEV) && token() === "demo-token";
+const isDemo = () => Boolean(DEMO_MODE) && token() === "demo-token";
 const call = (path, opts) => apiRequest(path, { token: token(), ...opts });
 
 export const RESOURCE_KINDS = ["pdf", "video", "link", "image"];
@@ -38,7 +39,7 @@ const S = {
   fourier: { id: "fourier", title: "Fourier Transform Workshop" },
   os: { id: "os-scheduling", title: "Process Scheduling Q&A" },
 };
-const DEMO_RESOURCES = import.meta.env.DEV
+const DEMO_RESOURCES = DEMO_MODE
   ? [
       { id: "res1", title: "Algorithms: 2024 exam solutions", kind: "pdf", module: "Algorithms", author: AMINE, url: "https://example.com/algo-2024.pdf", session: S.dp },
       { id: "res2", title: "Normalization in 15 minutes", kind: "video", module: "Databases", author: AMINE, url: "https://example.com/normalization", session: S.sql },

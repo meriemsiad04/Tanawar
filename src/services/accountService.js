@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { ApiError, apiRequest } from "./apiClient.js";
 import {
   DEMO_ACCOUNT,
@@ -35,7 +36,7 @@ export const DELETE_CONFIRMATION = "DELETE";
 const token = () => getSession()?.token;
 const call = (path, opts) => apiRequest(path, { token: token(), ...opts });
 const demoKind = () => {
-  if (!import.meta.env.DEV) return null;
+  if (!DEMO_MODE) return null;
   const t = token();
   if (t === "demo-token") return "account";
   if (DEMO_REGISTRY?.owns(t)) return "registry";

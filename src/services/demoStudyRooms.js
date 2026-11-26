@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { ApiError, isApiConfigured } from "./apiClient.js";
 import { getSession, isVerified } from "./authService.js";
 
@@ -302,6 +303,20 @@ function createDemoStudyRooms() {
       return { serverTime: new Date(now).toISOString(), myActiveRoomId: open?.roomId ?? null, rooms };
     },
 
+    // Admin overview (adminDashboardService): platform-wide, so no student identity is required.
+    adminOverview() {
+      const now = Date.now();
+      const state = read(now);
+      const active = new Set(state.sessions.filter((s) => !s.leftAt).map((s) => s.student.id));
+      return {
+        serverTime: new Date(now).toISOString(),
+        participants: active.size,
+        // One entry per sitting: when it started and how long it lasted (open sittings: until now).
+        sittings: state.sessions.map((s) => ({ startedAt: new Date(s.joinedAt).toISOString(), seconds: dur(s, now) })),
+        rooms: state.rooms.map((r) => ({ id: r.id, title: r.title, creator: r.creator.fullName, createdAt: new Date(r.createdAt).toISOString() })),
+      };
+    },
+
     // GET /study-rooms/:id
     get(roomId) {
       const user = me();
@@ -375,4 +390,4 @@ function createDemoStudyRooms() {
   };
 }
 
-export const DEMO_STUDY_ROOMS = import.meta.env.DEV ? createDemoStudyRooms() : null;
+export const DEMO_STUDY_ROOMS = DEMO_MODE ? createDemoStudyRooms() : null;

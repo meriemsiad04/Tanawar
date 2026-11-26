@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { ApiError, apiRequest, isApiConfigured } from "./apiClient.js";
 import { getSession } from "./authService.js";
 import { DEMO_STUDY_ROOMS } from "./demoStudyRooms.js";
@@ -33,7 +34,7 @@ export const STUDY_PATH = "/app/study";
 export const studyRoomPath = (id) => `${STUDY_PATH}/${encodeURIComponent(id)}`;
 
 const token = () => getSession()?.token;
-const demo = () => (import.meta.env.DEV && DEMO_STUDY_ROOMS?.active() && !isApiConfigured() ? DEMO_STUDY_ROOMS : null);
+const demo = () => (DEMO_MODE && DEMO_STUDY_ROOMS?.active() && !isApiConfigured() ? DEMO_STUDY_ROOMS : null);
 const call = (path, opts) => apiRequest(path, { token: token(), ...opts });
 const rid = (id) => encodeURIComponent(id);
 

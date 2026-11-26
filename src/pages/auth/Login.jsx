@@ -4,7 +4,7 @@ import Button from "../../Components/uiC/Button.jsx";
 import Icon from "../../Components/uiC/Icon.jsx";
 import Input from "../../Components/uiC/Input.jsx";
 import GoogleAuthButton from "../../Components/sharedC/GoogleAuthButton.jsx";
-import { DEMO_ACCOUNT, DEMO_ADMIN, MATRICULE_PATTERN, signIn, signInWithGoogle } from "../../services/authService.js";
+import { DEMO_ACCOUNT, DEMO_ADMIN, MATRICULE_PATTERN, demoAccountOverrides, signIn, signInWithGoogle } from "../../services/authService.js";
 
 function validate({ matricule, password }) {
   const errors = {};
@@ -83,6 +83,21 @@ export default function Login({ open, onClose, onSuccess, onCreateAccount, onFor
       setFormError(err?.message || "Something went wrong. Please try again.");
       setValues((v) => ({ ...v, password: "" }));
       passwordRef.current?.focus();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Demo mode only (the buttons render only when DEMO_ACCOUNT exists): one click signs in with a demo account.
+  const demoSignIn = async ({ matricule, password }) => {
+    setLoading(true);
+    setFormError("");
+    try {
+      const user = await signIn({ matricule, password, remember: values.remember });
+      reset();
+      onSuccess?.(user);
+    } catch (err) {
+      setFormError(err?.message || "Demo sign-in failed.");
     } finally {
       setLoading(false);
     }
@@ -208,15 +223,27 @@ export default function Login({ open, onClose, onSuccess, onCreateAccount, onFor
         <GoogleAuthButton onCredential={onGoogle} onError={(err) => setFormError(err.message)} disabled={loading} />
 
         {DEMO_ACCOUNT && (
-          <p className="rounded-[10px] bg-accent-soft px-3 py-2 text-center text-[13px] leading-[18px] text-accent-ink">
-            Demo (dev only): <b>{DEMO_ACCOUNT.matricule}</b> / <b>{DEMO_ACCOUNT.password}</b>
-            {DEMO_ADMIN && (
-              <>
-                <br />
-                Admin: <b>{DEMO_ADMIN.matricule}</b> / <b>{DEMO_ADMIN.password}</b>
-              </>
-            )}
-          </p>
+          <div className="flex flex-col gap-2 rounded-[10px] bg-accent-soft px-3 py-2.5 text-center text-[13px] leading-[18px] text-accent-ink">
+            <p>
+              Demo (no backend yet): <b>{DEMO_ACCOUNT.matricule}</b> / <b>{DEMO_ACCOUNT.password}</b>
+              {DEMO_ADMIN && (
+                <>
+                  <br />
+                  Admin: <b>{DEMO_ADMIN.matricule}</b> / <b>{DEMO_ADMIN.password}</b>
+                </>
+              )}
+            </p>
+            <div className="flex justify-center gap-2">
+              <button type="button" disabled={loading} onClick={() => demoSignIn({ matricule: DEMO_ACCOUNT.matricule, password: demoAccountOverrides.get().password ?? DEMO_ACCOUNT.password })} className="cursor-pointer rounded-lg bg-surface px-3 py-1.5 font-bold text-accent-ink hover:opacity-90 disabled:opacity-60">
+                Enter as student
+              </button>
+              {DEMO_ADMIN && (
+                <button type="button" disabled={loading} onClick={() => demoSignIn(DEMO_ADMIN)} className="cursor-pointer rounded-lg bg-surface px-3 py-1.5 font-bold text-accent-ink hover:opacity-90 disabled:opacity-60">
+                  Enter as admin
+                </button>
+              )}
+            </div>
+          </div>
         )}
 
         <p className="pt-1 text-center text-[13px] leading-[18px] text-fg-2">

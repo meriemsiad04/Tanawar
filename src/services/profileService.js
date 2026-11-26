@@ -1,3 +1,4 @@
+import { DEMO_MODE } from "./demoMode.js";
 import { ApiError, apiRequest } from "./apiClient.js";
 import { getSession, updateSessionUser } from "./authService.js";
 
@@ -15,7 +16,7 @@ import { getSession, updateSessionUser } from "./authService.js";
 
 const DEMO_KEY = "tanawar.demoProfile";
 const token = () => getSession()?.token;
-const isDemo = () => Boolean(import.meta.env.DEV) && token() === "demo-token";
+const isDemo = () => Boolean(DEMO_MODE) && token() === "demo-token";
 
 /** Subset of the profile mirrored into the session user (navbar chip, profile gate). */
 const sessionPatch = (p) => ({
@@ -85,7 +86,7 @@ function demoAttendance(from) {
 
 /* Dev demo account only: sample profile, reviews and hosted sessions so the profile page can be previewed.
    Dead code in production builds; remove with the demo account. */
-const DEMO_PROFILE = import.meta.env.DEV
+const DEMO_PROFILE = DEMO_MODE
   ? {
       birthdate: "2004-03-17",
       bio: "L3 Informatique student at UMBB. I love databases and clean code, and I host weekly SQL sessions before exams.\nAlways happy to help with Génie logiciel and UML too.",
@@ -94,7 +95,7 @@ const DEMO_PROFILE = import.meta.env.DEV
     }
   : null;
 
-const DEMO_RATING = import.meta.env.DEV
+const DEMO_RATING = DEMO_MODE
   ? {
       average: 4.7,
       count: 23,
