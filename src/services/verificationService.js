@@ -1,4 +1,4 @@
-import { DEMO_MODE } from "./demoMode.js";
+import { DEMO_MODE } from "../config/demo.js";
 import { ApiError, apiRequest } from "./apiClient.js";
 import { MATRICULE_PATTERN, getSession, toRegistrationError, updateSessionUser } from "./authService.js";
 import { DEMO_REGISTRY } from "./demoRegistry.js";

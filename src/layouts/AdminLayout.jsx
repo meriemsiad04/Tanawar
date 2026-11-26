@@ -2,7 +2,7 @@ import AdminSidebar from "../Components/layoutC/AdminSidebar.jsx";
 import Avatar from "../Components/uiC/Avatar.jsx";
 import ThemeToggle from "../Components/layoutC/ThemeToggle.jsx";
 import LangSwitch from "../Components/layoutC/LangSwitch.jsx";
-import { DEMO_MODE } from "../services/demoMode.js";
+import { DEMO_MODE } from "../config/demo.js";
 import { useAsync } from "../hooks/useAsync.js";
 import { getAdminCounts } from "../services/adminDashboardService.js";
 

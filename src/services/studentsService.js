@@ -1,4 +1,4 @@
-import { DEMO_MODE } from "./demoMode.js";
+import { DEMO_MODE } from "../config/demo.js";
 import { apiRequest } from "./apiClient.js";
 import { getSession } from "./authService.js";
 

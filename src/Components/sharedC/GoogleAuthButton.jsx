@@ -1,4 +1,4 @@
-import { DEMO_MODE } from "../../services/demoMode.js";
+import { DEMO_MODE } from "../../config/demo.js";
 import { useEffect, useRef, useState } from "react";
 import googleMark from "../../assets/brand/google-g.svg";
 

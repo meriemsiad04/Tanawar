@@ -1,4 +1,4 @@
-import { DEMO_MODE } from "./demoMode.js";
+import { DEMO_MODE } from "../config/demo.js";
 import { ApiError, VERIFICATION_EVENT, apiRequest } from "./apiClient.js";
 import { DEMO_REGISTRY } from "./demoRegistry.js";
 

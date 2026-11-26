@@ -1,4 +1,4 @@
-import { DEMO_MODE } from "./demoMode.js";
+import { DEMO_MODE } from "../config/demo.js";
 import { ApiError, apiRequest, isApiConfigured } from "./apiClient.js";
 import { getSession } from "./authService.js";
 import { DEMO_STUDY_ROOMS } from "./demoStudyRooms.js";
