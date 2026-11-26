@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../Components/layoutC/Navbar.jsx";
 import Footer from "../Components/layoutC/Footer.jsx";
 import Login from "../pages/auth/Login.jsx";
 import Register from "../pages/auth/Register.jsx";
-import { HOME_BY_ROLE } from "../services/authService.js";
+import Icon from "../Components/uiC/Icon.jsx";
+import { HOME_BY_ROLE, clearAccountNotice, readAccountNotice } from "../services/authService.js";
 import { SignInContext, SignUpContext } from "../hooks/useSignIn.js";
 
 /**
@@ -15,6 +16,9 @@ export default function PublicLayout({ children }) {
   const [modal, setModal] = useState(null); // null | "signIn" | "signUp"
   const [registerKey, setRegisterKey] = useState(0);
   const [googleSignUp, setGoogleSignUp] = useState(null);
+  // Set when an admin suspended / banned the account and the session was ended (authService).
+  const [accountNotice, setAccountNotice] = useState(readAccountNotice);
+  useEffect(clearAccountNotice, []); // shown once: a reload doesn't bring it back
 
   const openSignIn = () => setModal("signIn");
   const openSignUp = (google = null) => {
@@ -34,6 +38,15 @@ export default function PublicLayout({ children }) {
   return (
     <div id="top" className="flex min-h-screen flex-col bg-bg">
       <Navbar onSignIn={openSignIn} onSignUp={() => openSignUp()} />
+      {accountNotice && (
+        <div role="alert" className="mx-auto mt-4 flex w-[calc(100%-2rem)] max-w-3xl items-start gap-2 rounded-xl border border-live/25 bg-danger-soft px-4 py-3 text-sm font-semibold text-live">
+          <Icon name="alert" size="sm" className="mt-px" />
+          <span className="flex-1">You were signed out. {accountNotice}</span>
+          <button type="button" onClick={() => setAccountNotice(null)} aria-label="Dismiss" className="cursor-pointer rounded opacity-70 hover:opacity-100">
+            <Icon name="close" size="sm" />
+          </button>
+        </div>
+      )}
       <SignInContext.Provider value={openSignIn}>
         <SignUpContext.Provider value={() => openSignUp()}>
           <main className="flex-1">{children}</main>

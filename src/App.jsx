@@ -35,7 +35,7 @@ import StudyWithMeAdminP from "./pages/admin/StudyWithMeAdminP.jsx";
 import AnnouncementsP from "./pages/admin/AnnouncementsP.jsx";
 import AnalyticsP from "./pages/admin/AnalyticsP.jsx";
 import AdminManagementP from "./pages/admin/AdminManagementP.jsx";
-import { HOME_BY_ROLE, VERIFY_PATH, clearSession, getSession, isVerified } from "./services/authService.js";
+import { HOME_BY_ROLE, VERIFY_PATH, clearSession, enforceAccountAccess, getSession, isVerified } from "./services/authService.js";
 
 const SETUP_PATH = "/app/profile/setup";
 
@@ -43,7 +43,7 @@ const SETUP_PATH = "/app/profile/setup";
 const ADMIN_ROUTES = {
   "/admin": ["dashboard", AdminDashboardP],
   "/admin/registrations": ["students", RegistrationsP],
-  "/admin/users": ["students", UserManagementP],
+  "/admin/users": ["directory", UserManagementP],
   "/admin/sessions": ["sessions", ManagementSP],
   "/admin/sessions/approvals": ["sessions", ApprovalSP],
   "/admin/study": ["study", StudyWithMeAdminP],
@@ -86,6 +86,8 @@ export default function App() {
   }
 
   if (path.startsWith("/app") && session?.user) {
+    // Suspended / banned accounts are signed out (the server refuses them too; this covers the dev stand-in).
+    if (enforceAccountAccess()) return null;
     if (role === "admin") {
       window.location.replace(HOME_BY_ROLE.admin);
       return null;

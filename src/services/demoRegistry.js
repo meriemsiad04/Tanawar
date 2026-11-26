@@ -39,6 +39,40 @@ const readAsDataUrl = (file) =>
     reader.readAsDataURL(file);
   });
 
+/** Account access (separate from verification): suspended / banned students are refused everywhere, like the server's 403. */
+const accountStatusOf = (r) => r.accountStatus ?? "active";
+const blockedError = (r) =>
+  accountStatusOf(r) === "banned"
+    ? new ApiError("This account has been banned. Contact the TANAWAR administrators.", { status: 403, code: "ACCOUNT_BANNED" })
+    : accountStatusOf(r) === "suspended"
+      ? new ApiError("This account has been suspended. Contact the TANAWAR administrators.", { status: 403, code: "ACCOUNT_SUSPENDED" })
+      : null;
+
+const DEMO_ADMIN_NAME = "UMBB Admin";
+
+/** Moderation log actions → admin overview activity types (adminDashboardService ACTIVITY_TYPES). */
+const MODERATION_EVENT = { suspended: "suspension", reinstated: "reinstatement", unbanned: "reinstatement", banned: "ban" };
+
+/** The log entry every admin action on a student leaves (the real server writes it in the same transaction as the change). */
+const logModeration = (rec, { action, reason, at }) => {
+  rec.moderation = [...(rec.moderation ?? []), { id: Math.random().toString(36).slice(2, 10), action, reason: reason ?? null, by: DEMO_ADMIN_NAME, at }];
+};
+
+/** Faculty / department / level aren't collected at sign-up: they stay null until a profile provides them. */
+const studentSummaryOf = (r) => ({
+  id: r.id,
+  fullName: r.fullName,
+  email: r.email ?? null,
+  matricule: r.matricule,
+  avatarUrl: r.avatarUrl ?? null,
+  faculty: r.faculty ?? null,
+  department: r.department ?? null,
+  level: r.level ?? null,
+  verificationStatus: r.status,
+  accountStatus: accountStatusOf(r),
+  registeredAt: r.createdAt ?? r.submittedAt,
+});
+
 const userOf = (r) => ({
   id: r.id,
   matricule: r.matricule,
@@ -48,6 +82,7 @@ const userOf = (r) => ({
   authProvider: r.method,
   verificationStatus: r.status,
   rejectionReason: r.rejectionReason ?? null,
+  accountStatus: accountStatusOf(r),
 });
 
 const verificationOf = (r) => ({
@@ -125,6 +160,8 @@ function createDemoRegistry() {
       const list = load();
       const rec = list.find((r) => r.matricule === matricule && r.password && r.password === password);
       if (!rec) return null;
+      const blocked = blockedError(rec);
+      if (blocked) throw blocked;
       if (rec.deactivatedAt) {
         delete rec.deactivatedAt; // signing in again reactivates a deactivated account
         save(list);
@@ -134,10 +171,16 @@ function createDemoRegistry() {
 
     signInWithGoogle(email) {
       const rec = load().find((r) => r.email?.toLowerCase() === email.toLowerCase());
+      if (rec && blockedError(rec)) throw blockedError(rec);
       return rec ? { token: `demo-reg:${rec.id}`, user: userOf(rec) } : null;
     },
 
-    me: (token) => userOf(byToken(token).rec),
+    me(token) {
+      const { rec } = byToken(token);
+      const blocked = blockedError(rec);
+      if (blocked) throw blocked; // like the server: an existing token stops working once the account is suspended / banned
+      return userOf(rec);
+    },
 
     /* Settings → account (see accountService). `currentPassword` is checked like the real server must. */
     checkPassword(token, currentPassword) {
@@ -223,8 +266,81 @@ function createDemoRegistry() {
           ...(r.reviewedAt
             ? [{ id: `rev-${r.id}-${r.reviewedAt}`, type: r.status === "approved" ? "approval" : "rejection", actor: r.reviewedBy ?? "Admin", subject: r.fullName, at: r.reviewedAt }]
             : []),
+          ...(r.moderation ?? [])
+            .filter((m) => MODERATION_EVENT[m.action])
+            .map((m) => ({ id: `mod-${m.id}`, type: MODERATION_EVENT[m.action], actor: m.by, subject: r.fullName, at: m.at })),
         ]),
       };
+    },
+
+    /* ── Admin: student directory (adminStudentsService). Same filter / sort / paging rules as the real endpoint. ── */
+
+    students({ q = "", faculty = "", department = "", level = "", verification = "", status = "", sort = "registeredAt", order = "desc", page = 1, pageSize = 20 } = {}) {
+      const all = load().map(studentSummaryOf);
+      const needle = q.trim().toLowerCase();
+      const facet = (key) => [...new Set(all.map((s) => s[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      const cmp =
+        {
+          name: (a, b) => a.fullName.localeCompare(b.fullName),
+          registeredAt: (a, b) => (a.registeredAt ?? "").localeCompare(b.registeredAt ?? ""),
+        }[sort] ?? (() => 0);
+      const filtered = all
+        .filter((s) => !needle || [s.fullName, s.email, s.matricule].some((v) => v?.toLowerCase().includes(needle)))
+        .filter((s) => (!faculty || s.faculty === faculty) && (!department || s.department === department) && (!level || s.level === level))
+        .filter((s) => (!verification || s.verificationStatus === verification) && (!status || s.accountStatus === status))
+        .sort((a, b) => (order === "asc" ? 1 : -1) * cmp(a, b) || a.fullName.localeCompare(b.fullName));
+      const size = Math.min(Math.max(1, pageSize), 100);
+      const p = Math.max(1, page);
+      return {
+        items: filtered.slice((p - 1) * size, p * size),
+        total: filtered.length,
+        page: p,
+        pageSize: size,
+        facets: { faculties: facet("faculty"), departments: facet("department"), levels: facet("level") },
+      };
+    },
+
+    student(id, studyStats = null) {
+      const rec = load().find((r) => r.id === id);
+      if (!rec) throw new ApiError("Student not found.", { status: 404, code: "NOT_FOUND" });
+      return {
+        ...studentSummaryOf(rec),
+        authProvider: rec.method,
+        registrationId: rec.id,
+        verification: {
+          status: rec.status,
+          documentType: rec.documentType ?? null,
+          submittedAt: rec.submittedAt ?? null,
+          reviewedAt: rec.reviewedAt ?? null,
+          reviewedBy: rec.reviewedBy ?? null,
+          rejectionReason: rec.rejectionReason ?? null,
+          attempts: rec.attempts ?? 1,
+        },
+        accountStatusReason: rec.accountStatusReason ?? null,
+        accountStatusChangedAt: rec.accountStatusChangedAt ?? null,
+        accountStatusChangedBy: rec.accountStatusChangedBy ?? null,
+        deactivated: Boolean(rec.deactivatedAt),
+        // Only what this browser really holds: sessions, resources and reports have no platform-wide stand-in (null = not available).
+        stats: { sessionsCreated: null, sessionsJoined: null, resourcesUploaded: null, reportsAgainst: null, reportsFiled: null, study: studyStats },
+        moderation: [...(rec.moderation ?? [])].sort((a, b) => b.at.localeCompare(a.at)),
+      };
+    },
+
+    /** suspend | reinstate | ban, with the transitions the server must enforce (409 INVALID_TRANSITION otherwise). */
+    setAccountStatus(id, action, reason) {
+      const list = load();
+      const rec = list.find((r) => r.id === id);
+      if (!rec) throw new ApiError("Student not found.", { status: 404, code: "NOT_FOUND" });
+      const from = accountStatusOf(rec);
+      const to = { suspend: "suspended", reinstate: "active", ban: "banned" }[action];
+      const allowed = { suspend: ["active"], reinstate: ["suspended", "banned"], ban: ["active", "suspended"] }[action] ?? [];
+      if (!allowed.includes(from)) {
+        throw new ApiError(`This account is already ${from}. Refresh to see its current status.`, { status: 409, code: "INVALID_TRANSITION" });
+      }
+      const at = new Date().toISOString();
+      Object.assign(rec, { accountStatus: to, accountStatusReason: reason || null, accountStatusChangedAt: at, accountStatusChangedBy: DEMO_ADMIN_NAME });
+      logModeration(rec, { action: action === "reinstate" ? (from === "banned" ? "unbanned" : "reinstated") : to, reason, at });
+      save(list);
     },
 
     decide(id, decision, reason) {
@@ -232,7 +348,9 @@ function createDemoRegistry() {
       const rec = list.find((r) => r.id === id);
       if (!rec) throw new ApiError("Registration not found.", { status: 404, code: "NOT_FOUND" });
       if (rec.status !== "pending") throw new ApiError("This registration has already been reviewed.", { status: 409, code: "ALREADY_REVIEWED" });
-      Object.assign(rec, { status: decision, rejectionReason: decision === "rejected" ? reason : null, reviewedAt: new Date().toISOString(), reviewedBy: "Demo admin" });
+      const at = new Date().toISOString();
+      Object.assign(rec, { status: decision, rejectionReason: decision === "rejected" ? reason : null, reviewedAt: at, reviewedBy: DEMO_ADMIN_NAME });
+      logModeration(rec, { action: decision === "approved" ? "verification_approved" : "verification_rejected", reason: decision === "rejected" ? reason : null, at });
       save(list);
       return this.get(id);
     },

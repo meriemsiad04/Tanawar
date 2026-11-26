@@ -29,7 +29,7 @@ export const RANGES = [
   { value: 90, label: "90 days" },
 ];
 
-export const ACTIVITY_TYPES = ["registration", "resubmission", "approval", "rejection", "session", "sessionApproval", "resource", "report", "studyRoom"];
+export const ACTIVITY_TYPES = ["registration", "resubmission", "approval", "rejection", "suspension", "reinstatement", "ban", "session", "sessionApproval", "resource", "report", "studyRoom"];
 
 const token = () => getSession()?.token;
 const call = (path, opts) => apiRequest(path, { token: token(), ...opts });

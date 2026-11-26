@@ -317,6 +317,21 @@ function createDemoStudyRooms() {
       };
     },
 
+    // Admin student profile (adminStudentsService): aggregates only, never room contents or who they studied with.
+    studentStats(studentId) {
+      const now = Date.now();
+      const state = read(now);
+      const mine = state.sessions.filter((s) => s.student.id === studentId);
+      const last = mine.reduce((t, s) => Math.max(t, s.leftAt ?? now), 0);
+      return {
+        totalSeconds: mine.reduce((n, s) => n + dur(s, now), 0),
+        sittings: mine.length,
+        roomsCreated: state.rooms.filter((r) => r.creator.id === studentId).length,
+        lastStudiedAt: mine.length ? new Date(last).toISOString() : null,
+        studyingNow: mine.some((s) => !s.leftAt),
+      };
+    },
+
     // GET /study-rooms/:id
     get(roomId) {
       const user = me();

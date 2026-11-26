@@ -28,6 +28,13 @@ export const isApiConfigured = () => Boolean(BASE_URL);
 export const VERIFICATION_EVENT = "tanawar:verification-required";
 const VERIFICATION_CODES = { VERIFICATION_PENDING: "pending", VERIFICATION_REJECTED: "rejected" };
 
+/**
+ * Fired on `window` when the server refuses a request because an admin suspended or banned the account
+ * (403 + code ACCOUNT_SUSPENDED | ACCOUNT_BANNED). authService listens: it ends the session and explains why.
+ */
+export const ACCOUNT_BLOCKED_EVENT = "tanawar:account-blocked";
+const BLOCKED_CODES = { ACCOUNT_SUSPENDED: "suspended", ACCOUNT_BANNED: "banned" };
+
 /** `responseType: "blob"` returns the raw body (used for protected files such as verification documents). */
 export async function apiRequest(path, { method = "GET", body, token, signal, responseType = "json" } = {}) {
   if (!BASE_URL) {
@@ -75,6 +82,9 @@ export async function apiRequest(path, { method = "GET", body, token, signal, re
           detail: { status: VERIFICATION_CODES[data.code], rejectionReason: data?.rejectionReason ?? null },
         })
       );
+    }
+    if (res.status === 403 && BLOCKED_CODES[data?.code] && token && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(ACCOUNT_BLOCKED_EVENT, { detail: { status: BLOCKED_CODES[data.code] } }));
     }
     throw new ApiError(data?.message || `Request failed (${res.status}).`, {
       status: res.status,

@@ -11,7 +11,8 @@ const ADMIN_NAV = [
   {
     label: "Community",
     items: [
-      { key: "students", label: "Students & Verification", icon: "userCheck", href: "/admin/registrations" },
+      { key: "directory", label: "Students", icon: "users", href: "/admin/users" },
+      { key: "students", label: "Verification Queue", icon: "userCheck", href: "/admin/registrations" },
       { key: "sessions", label: "Sessions", icon: "calendar", href: "/admin/sessions" },
       { key: "study", label: "Study With Me", icon: "lamp", href: "/admin/study" },
       { key: "resources", label: "Resources", icon: "books", href: "/admin/resources" },

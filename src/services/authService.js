@@ -1,5 +1,5 @@
 import { DEMO_MODE } from "../config/demo.js";
-import { ApiError, VERIFICATION_EVENT, apiRequest } from "./apiClient.js";
+import { ACCOUNT_BLOCKED_EVENT, ApiError, VERIFICATION_EVENT, apiRequest } from "./apiClient.js";
 import { DEMO_REGISTRY } from "./demoRegistry.js";
 
 /**
@@ -11,7 +11,7 @@ import { DEMO_REGISTRY } from "./demoRegistry.js";
  *   200 → { token: string, user: { id, matricule, fullName, email, role: "student" | "admin", authProvider: "email" | "google",
  *                                  verificationStatus: "pending" | "approved" | "rejected", rejectionReason: string | null,
  *                                  profileCompleted: boolean, field?, level?, avatarUrl? } }
- *   401 → invalid credentials · 403 ACCOUNT_SUSPENDED → suspended
+ *   401 → invalid credentials · 403 ACCOUNT_SUSPENDED | ACCOUNT_BANNED → blocked by an admin (docs/student-management.md)
  *   (pending / rejected students DO get a token: they need it to see their status and resubmit.
  *    Every other student endpoint answers 403 VERIFICATION_PENDING | VERIFICATION_REJECTED for them.)
  *
@@ -130,10 +130,61 @@ function commonAuthError(err) {
   if (err instanceof ApiError && err.status === 429) {
     return new ApiError("Too many attempts. Please wait a moment and try again.", { status: 429, code: "RATE_LIMITED" });
   }
-  if (err instanceof ApiError && err.code === "ACCOUNT_SUSPENDED") {
-    return new ApiError("This account has been suspended. Contact the TANAWAR administrators.", { status: 403, code: "ACCOUNT_SUSPENDED" });
+  if (err instanceof ApiError && BLOCKED_MESSAGES[err.code]) {
+    return new ApiError(BLOCKED_MESSAGES[err.code], { status: 403, code: err.code });
   }
   return err;
+}
+
+/** Sign-in refusals and the notice shown after a forced sign-out (account suspended / banned by an admin). */
+const BLOCKED_MESSAGES = {
+  ACCOUNT_SUSPENDED: "This account has been suspended. Contact the TANAWAR administrators.",
+  ACCOUNT_BANNED: "This account has been banned. Contact the TANAWAR administrators.",
+};
+const BLOCKED_NOTICE_KEY = "tanawar.accountNotice";
+
+/** One-time message for the landing page after a forced sign-out (read it, then clearAccountNotice()). */
+export function readAccountNotice() {
+  try {
+    return sessionStorage.getItem(BLOCKED_NOTICE_KEY);
+  } catch {
+    return null;
+  }
+}
+export function clearAccountNotice() {
+  try {
+    sessionStorage.removeItem(BLOCKED_NOTICE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Ends the session of a suspended / banned student and sends them to the landing page with an explanation. */
+function signOutBlocked(status) {
+  clearSession();
+  try {
+    sessionStorage.setItem(BLOCKED_NOTICE_KEY, BLOCKED_MESSAGES[status === "banned" ? "ACCOUNT_BANNED" : "ACCOUNT_SUSPENDED"]);
+  } catch {
+    /* storage blocked: they'll see the message on their next sign-in attempt */
+  }
+  window.location.replace("/");
+}
+
+/**
+ * Dev stand-in only: the real server refuses every request of a suspended / banned account (403 → ACCOUNT_BLOCKED_EVENT).
+ * The in-browser registry has no requests to refuse, so App.jsx asks here on each page load. Returns true when it signed the user out.
+ */
+export function enforceAccountAccess() {
+  const token = getSession()?.token;
+  if (!DEMO_MODE || !DEMO_REGISTRY?.owns(token) || !DEMO_REGISTRY.active()) return false;
+  try {
+    DEMO_REGISTRY.me(token);
+    return false;
+  } catch (err) {
+    if (!BLOCKED_MESSAGES[err?.code]) return false;
+    signOutBlocked(err.code === "ACCOUNT_BANNED" ? "banned" : "suspended");
+    return true;
+  }
 }
 
 function acceptSession(data, remember = true) {
@@ -302,5 +353,11 @@ if (typeof window !== "undefined") {
     updateSessionUser({ verificationStatus: e.detail.status, rejectionReason: e.detail.rejectionReason });
     const path = window.location.pathname;
     if (path.startsWith("/app") && path !== VERIFY_PATH) window.location.replace(VERIFY_PATH);
+  });
+
+  // An admin suspended or banned this account: the server refuses every request, so end the session here too.
+  window.addEventListener(ACCOUNT_BLOCKED_EVENT, (e) => {
+    if (getSession()?.user?.role === "admin") return;
+    signOutBlocked(e.detail.status);
   });
 }

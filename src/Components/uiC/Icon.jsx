@@ -85,6 +85,10 @@ import {
   ScrollText,
   Inbox,
   ArrowUpRight,
+  ChevronLeft,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 
 /**
@@ -180,6 +184,10 @@ const ICONS = {
   logs: ScrollText,
   inbox: Inbox,
   arrowUpRight: ArrowUpRight,
+  chevronLeft: ChevronLeft,
+  sort: ArrowUpDown,
+  arrowUp: ArrowUp,
+  arrowDown: ArrowDown,
 };
 
 // The only sizes allowed in the UI.
