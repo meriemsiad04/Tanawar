@@ -28,15 +28,25 @@ const ADMIN_NAV = [
     ],
   },
   {
-    label: "Administration",
+    label: "System",
     items: [
+      { key: "changelog", label: "Change log", icon: "history", href: "/admin/changelog" },
+      { key: "operators", label: "Operators", icon: "userCog", href: "/admin/operators" },
       { key: "settings", label: "Settings", icon: "gear", href: "/admin/settings" },
-      { key: "admins", label: "Admin Management & Activity Logs", icon: "logs", href: "/admin/admins" },
     ],
   },
 ];
 
 const COLLAPSED_KEY = "tanawar.adminSidebarCollapsed";
+const FOLDED_KEY = "tanawar.adminNavFolded";
+const readFolded = () => {
+  try {
+    const v = JSON.parse(localStorage.getItem(FOLDED_KEY) ?? "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+};
 const readCollapsed = () => {
   try {
     return localStorage.getItem(COLLAPSED_KEY) === "1";
@@ -52,6 +62,19 @@ const readCollapsed = () => {
  */
 export default function AdminSidebar({ active = "dashboard", user, onLogout, counts = {} }) {
   const [collapsed, setCollapsed] = useState(readCollapsed);
+  // Groups folded under their heading (expanded sidebar only; the icon rail always lists every item).
+  const [folded, setFolded] = useState(readFolded);
+  const toggleGroup = (label) => {
+    setFolded((f) => {
+      const next = f.includes(label) ? f.filter((l) => l !== label) : [...f, label];
+      try {
+        localStorage.setItem(FOLDED_KEY, JSON.stringify(next));
+      } catch {
+        /* private mode: the choice just isn't remembered */
+      }
+      return next;
+    });
+  };
   const wide = !collapsed;
   /** Classes that apply only while the sidebar is expanded on lg+ screens. */
   const lg = (cls) => (wide ? cls : "");
@@ -81,22 +104,42 @@ export default function AdminSidebar({ active = "dashboard", user, onLogout, cou
       </a>
 
       <nav aria-label="Admin navigation" className={`flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-4 [scrollbar-width:thin] short:py-3 ${lg("lg:px-4")}`}>
-        {ADMIN_NAV.map((group, i) => (
-          <div key={group.label} className="flex flex-col gap-1">
+        {ADMIN_NAV.map((group, i) => {
+          const isFolded = wide && i > 0 && folded.includes(group.label);
+          const listId = `admin-nav-${group.label.toLowerCase()}`;
+          // A folded group still shows its active item, so the current page is never hidden.
+          const hiddenCount = isFolded ? group.items.reduce((n, it) => n + (it.key === active ? 0 : counts[it.key] ?? 0), 0) : 0;
+          return (
+          <div key={group.label} id={listId} className="flex flex-col gap-1">
             {i > 0 && <div aria-hidden="true" className={`mx-2 my-2 border-t border-line ${lg("lg:hidden")}`} />}
             {i > 0 && (
-              <p className={`hidden px-3 pb-1 pt-3 text-xs font-bold uppercase tracking-[0.14em] text-fg-3 short:pt-2 ${lg("lg:block")}`}>{group.label}</p>
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.label)}
+                aria-expanded={!isFolded}
+                aria-controls={listId}
+                className={`hidden cursor-pointer items-center gap-2 rounded-lg px-3 pb-1 pt-3 text-left text-xs font-bold uppercase tracking-[0.14em] text-fg-3 transition-colors hover:text-fg short:pt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${lg("lg:flex")}`}
+              >
+                <span className="flex-1">{group.label}</span>
+                {hiddenCount > 0 && (
+                  <span aria-label={`${hiddenCount} pending`} className="rounded-full bg-success px-1.5 py-0.5 text-[10px] leading-none tracking-normal text-white">
+                    {hiddenCount > 99 ? "99+" : hiddenCount}
+                  </span>
+                )}
+                <Icon name="chevronDown" size="sm" className={`transition-transform duration-200 motion-reduce:transition-none ${isFolded ? "-rotate-90" : ""}`} />
+              </button>
             )}
             {group.items.map(({ key, label, icon, href }) => {
               const count = counts[key];
               const isActive = key === active;
+              const foldedOut = isFolded && !isActive;
               return (
                 <a
                   key={key}
                   href={href}
                   title={label}
                   aria-current={isActive ? "page" : undefined}
-                  className={`relative flex min-h-11 shrink-0 items-center justify-center gap-3 rounded-full px-3 text-[15px] font-semibold leading-5 transition-colors short:min-h-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${lg("lg:justify-start lg:rounded-2xl lg:px-4 lg:py-2")} ${
+                  className={`relative flex min-h-11 shrink-0 items-center justify-center gap-3 rounded-full px-3 text-[15px] font-semibold leading-5 transition-colors short:min-h-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${lg("lg:justify-start lg:rounded-2xl lg:px-4 lg:py-2")} ${foldedOut ? "lg:hidden" : ""} ${
                     isActive ? "bg-primary text-white shadow-sm" : "text-fg hover:bg-success-soft hover:text-success-ink"
                   }`}
                 >
@@ -116,7 +159,8 @@ export default function AdminSidebar({ active = "dashboard", user, onLogout, cou
               );
             })}
           </div>
-        ))}
+          );
+        })}
       </nav>
 
       <div className={`flex shrink-0 flex-col items-center justify-center gap-1 border-t border-line p-3 ${lg("lg:flex-row lg:justify-start lg:gap-1 lg:py-4 lg:pl-5 lg:pr-3 short:lg:py-2.5")}`}>

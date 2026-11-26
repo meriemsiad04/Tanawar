@@ -273,6 +273,13 @@ function createDemoRegistry() {
       };
     },
 
+    /** Change log (adminSystemService): every admin action recorded on a student, with the student it targeted. */
+    auditLog() {
+      return load().flatMap((r) =>
+        (r.moderation ?? []).map((m) => ({ ...m, target: { type: "student", id: r.id, label: r.fullName } }))
+      );
+    },
+
     /* ── Admin: student directory (adminStudentsService). Same filter / sort / paging rules as the real endpoint. ── */
 
     students({ q = "", faculty = "", department = "", level = "", verification = "", status = "", sort = "registeredAt", order = "desc", page = 1, pageSize = 20 } = {}) {

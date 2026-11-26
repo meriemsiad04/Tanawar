@@ -34,7 +34,8 @@ import AdminSettingP from "./pages/admin/AdminSettingP.jsx";
 import StudyWithMeAdminP from "./pages/admin/StudyWithMeAdminP.jsx";
 import AnnouncementsP from "./pages/admin/AnnouncementsP.jsx";
 import AnalyticsP from "./pages/admin/AnalyticsP.jsx";
-import AdminManagementP from "./pages/admin/AdminManagementP.jsx";
+import ChangelogP from "./pages/admin/ChangelogP.jsx";
+import OperatorsP from "./pages/admin/OperatorsP.jsx";
 import { HOME_BY_ROLE, VERIFY_PATH, clearSession, enforceAccountAccess, getSession, isVerified } from "./services/authService.js";
 
 const SETUP_PATH = "/app/profile/setup";
@@ -52,8 +53,9 @@ const ADMIN_ROUTES = {
   "/admin/modules": ["academic", AdminModulesP],
   "/admin/announcements": ["announcements", AnnouncementsP],
   "/admin/analytics": ["analytics", AnalyticsP],
+  "/admin/changelog": ["changelog", ChangelogP],
+  "/admin/operators": ["operators", OperatorsP],
   "/admin/settings": ["settings", AdminSettingP],
-  "/admin/admins": ["admins", AdminManagementP],
 };
 
 function handleLogout() {

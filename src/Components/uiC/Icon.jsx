@@ -92,6 +92,14 @@ import {
   Ban,
   CircleX,
   NotebookPen,
+  DoorClosed,
+  RotateCcw,
+  UserMinus,
+  ShieldAlert,
+  Hourglass,
+  History,
+  UserCog,
+  Wrench,
 } from "lucide-react";
 
 /**
@@ -194,6 +202,14 @@ const ICONS = {
   ban: Ban,
   circleX: CircleX,
   note: NotebookPen,
+  doorClosed: DoorClosed,
+  reopen: RotateCcw,
+  userMinus: UserMinus,
+  shieldAlert: ShieldAlert,
+  hourglass: Hourglass,
+  history: History,
+  userCog: UserCog,
+  wrench: Wrench,
 };
 
 // The only sizes allowed in the UI.

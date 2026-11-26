@@ -350,6 +350,12 @@ export const DEMO_SESSION_ADMIN = DEMO_MODE
       /** Pending join requests on one session (the host answers them; admins only see them). */
       joinRequests: (id) => demoJoinRequests().filter((r) => r.sessionId === id),
       history: (id) => readDemo().log.filter((e) => e.sessionId === id),
+      /** Change log (adminSystemService): every admin action on any session, with the session it targeted. */
+      auditLog() {
+        const store = readDemo();
+        const titles = new Map(demoAll(store).map((s) => [s.id, s.title]));
+        return store.log.map((e) => ({ ...e, target: { type: "session", id: e.sessionId, label: titles.get(e.sessionId) ?? "Deleted session" } }));
+      },
       notes: (id) => readDemo().notes.filter((n) => n.sessionId === id),
       /** Applies an admin action already validated by adminSessionsService. `patch`: the new moderation fields. */
       act(id, action, patch, { reason, by }) {
